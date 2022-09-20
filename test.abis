@@ -1,0 +1,19 @@
+block main do
+    println "Hello World! This is ABIS."
+end
+
+block is_even in num number out bool do 
+    iff ((number % 2) == 0) else
+    rtn true
+    else:
+    rtn false
+end
+
+@is_even[num:number]->bool {
+    if: ((number % 2) == 0) | else;
+    rtn: true;
+    else:
+        rtn false;
+}
+
+...
