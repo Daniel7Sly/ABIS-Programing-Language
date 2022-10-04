@@ -1,19 +1,45 @@
 block main do
-    println "Hello World! This is ABIS."
+    println "EMEM"
 end
 
-block is_even in num number out bool do 
+proc is_even in num number out bool is 
     iff ((number % 2) == 0) else
     rtn true
     else:
     rtn false
 end
 
-@is_even[num:number]->bool {
-    if: ((number % 2) == 0) | else;
-    rtn: true;
-    else:
-        rtn false;
-}
+struct amam is
 
-...
+end
+_________________________________________________
+
+proc main in num a out text do
+    # EMEMEMEME
+    giv a ( a * a )
+    return "a"
+end
+
+
+
+proc main in num a out text do
+    giv a ( a * a )
+    return "a"
+end
+
+
+
+
+(block):
+    nome: ...
+    in: [
+        ...
+    ]
+    out: ...
+    corpo: ...
+
+(struct):
+    nome: ...
+    fields: [
+        ...
+    ]

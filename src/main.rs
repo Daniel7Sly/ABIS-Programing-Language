@@ -1,3 +1,2 @@
-fn main() {
-    println!("Hello, world!");
-}
+use abis::*;
+fn main() {}
