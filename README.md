@@ -7,7 +7,13 @@ give the user some extra functinality by allowing them to run ABIS scripts in yo
 This is still in a very early development stage and a lot of things can change.
 
 # Objectives
-:TODO:
+
+- [ ] Complete the interpreter with basic funcionality 
+(procedures, structs, actions).
+- [ ] Documentation.
+- [ ] Add Imports. (Being able to use multiple script files).
+- [ ] Make the part where the interpreter can be embeded in
+projects.
 
 # Instructions and syntax
 Intruction Description [here]().
