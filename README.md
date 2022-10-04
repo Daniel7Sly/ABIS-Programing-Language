@@ -16,6 +16,6 @@ This is still in a very early development stage and a lot of things can change.
 projects.
 
 # Instructions and syntax
-Intruction Description [here]().
+Check Intruction and syntax Description [here](https://github.com/Daniel7Sly/ABIS-Programing-Language/blob/master/ABIS%20Reference.md).
 
 The syntax of this language is inspired by the programing language [Porth](https://gitlab.com/tsoding/porth) by the streamer [tsoding](https://www.twitch.tv/tsoding).
