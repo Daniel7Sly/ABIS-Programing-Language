@@ -19,7 +19,7 @@ const TYPE_NUM: &str = "NUM";
 const TYPE_BOOL: &str = "BOOL";
 
 #[derive(Debug, Clone)]
-enum ValueValue {
+enum ValueForm {
     Struct(HashMap<String, Value>),
     Normal(String),
     Array(Vec<Value>),
@@ -28,15 +28,15 @@ enum ValueValue {
 #[derive(Debug, Clone)]
 struct Value {
     typee: String,
-    value: ValueValue,
+    value: ValueForm,
 }
 
 impl Value {
     fn new(typee: &str) -> Self {
-        let value: ValueValue = match typee {
-            TYPE_TEXT => ValueValue::Normal("".to_string()),
-            TYPE_NUM => ValueValue::Normal("0".to_string()),
-            TYPE_BOOL => ValueValue::Normal("false".to_string()),
+        let value: ValueForm = match typee {
+            TYPE_TEXT => ValueForm::Normal("".to_string()),
+            TYPE_NUM => ValueForm::Normal("0".to_string()),
+            TYPE_BOOL => ValueForm::Normal("false".to_string()),
             _ => todo!(),
         };
         Value {
@@ -64,15 +64,10 @@ impl Variable {
 struct Action {
     name: String,
     parameters: Vec<String>,
-    // line: usize,
 }
 impl Action {
-    fn new(name: String, parameters: Vec<String> /*line: usize*/) -> Self {
-        Self {
-            name,
-            parameters,
-            //line,
-        }
+    fn new(name: String, parameters: Vec<String>) -> Self {
+        Self { name, parameters }
     }
 }
 
@@ -80,15 +75,10 @@ impl Action {
 struct Flag {
     name: String,
     position: usize,
-    //line: usize,
 }
 impl Flag {
-    fn new(name: String, position: usize /*line: usize*/) -> Self {
-        Self {
-            name,
-            position,
-            //line,
-        }
+    fn new(name: String, position: usize) -> Self {
+        Self { name, position }
     }
 }
 
@@ -106,7 +96,6 @@ impl Struct {
 #[derive(Debug, Clone)]
 struct Procedure {
     name: String,
-    // line: usize,
     input_vars_and_types: Option<Vec<(String, String)>>,
     output_type: Option<String>,
     output_value: Option<Value>,
@@ -140,7 +129,7 @@ impl Procedure {
         }
     }
 
-    fn run_block(input_values: Option<Vec<String>>) {
+    fn run_proc(input_values: Option<Vec<String>>) {
         todo!()
     }
 }
