@@ -28,18 +28,26 @@ proc main in num a out text do
 end
 
 
+_________________________________________________
 
 
-(block):
-    nome: ...
-    in: [
-        ...
-    ]
-    out: ...
-    corpo: ...
 
-(struct):
-    nome: ...
-    fields: [
-        ...
-    ]
+proc sum_of in num x num y out num is
+    var num rslt
+    giv rslt ( x + y )
+    rtn rslt
+end
+
+proc main is
+    var num a giv a 20
+    var num b giv b 10
+    giv a @sum_of a b
+    giv a ( a + a )
+    return: "a"
+end
+
+proc assert in bool expr is 
+    ifn expr crash
+    rtn
+    crash: stp
+end

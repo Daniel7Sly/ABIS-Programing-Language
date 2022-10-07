@@ -1,2 +1,5 @@
 use abis::*;
-fn main() {}
+fn main() {
+    let a = false.to_string();
+    print!("{}", a);
+}

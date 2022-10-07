@@ -1,4 +1,8 @@
+mod std_actions;
+
 use std::collections::{self, HashMap};
+
+// use crate::std_actions::ACTIONCOUNT;
 
 // keywords
 const KW_ARR: &[&str] = &[KW_PROC, KW_STRUCT];
@@ -14,19 +18,48 @@ const KW_END: &str = "end";
 const KW_COUNT: u8 = 6;
 
 // basic types
-const TYPE_TEXT: &str = "TEXT";
-const TYPE_NUM: &str = "NUM";
-const TYPE_BOOL: &str = "BOOL";
+pub const TYPE_TEXT: &str = "TEXT";
+pub const TYPE_NUM: &str = "NUM";
+pub const TYPE_BOOL: &str = "BOOL";
 
 #[derive(Debug, Clone)]
-enum ValueForm {
+pub enum ValueForm {
     Struct(HashMap<String, Value>),
     Normal(String),
     Array(Vec<Value>),
 }
+impl ValueForm {
+    pub fn get_normal_value(&self) -> &String {
+        match self {
+            ValueForm::Normal(x) => x,
+            _ => panic!("atempted to get normal value without being normal"),
+        }
+    }
+
+    pub fn is_normal(&self) -> bool {
+        match self {
+            ValueForm::Normal(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_array(&self) -> bool {
+        match self {
+            ValueForm::Array(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_struct(&self) -> bool {
+        match self {
+            ValueForm::Struct(_) => true,
+            _ => false,
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
-struct Value {
+pub struct Value {
     typee: String,
     value: ValueForm,
 }
@@ -37,7 +70,7 @@ impl Value {
             TYPE_TEXT => ValueForm::Normal("".to_string()),
             TYPE_NUM => ValueForm::Normal("0".to_string()),
             TYPE_BOOL => ValueForm::Normal("false".to_string()),
-            _ => todo!(),
+            _ => todo!("creation of new values of structs are not implemented yet!"),
         };
         Value {
             typee: typee.to_string(),
@@ -46,19 +79,19 @@ impl Value {
     }
 }
 
-#[derive(Debug, Clone)]
-struct Variable {
-    name: String,
-    value: Value,
-}
-impl Variable {
-    fn new(name: &String, typee: &String) -> Self {
-        Variable {
-            name: name.clone(),
-            value: Value::new(typee),
-        }
-    }
-}
+// #[derive(Debug, Clone)]
+// struct Variable {
+//     name: String,
+//     value: Value,
+// }
+// impl Variable {
+//     fn new(name: &String, typee: &String) -> Self {
+//         Variable {
+//             name: name.clone(),
+//             value: Value::new(typee),
+//         }
+//     }
+// }
 
 #[derive(Debug, Clone)]
 struct Action {
@@ -70,15 +103,35 @@ impl Action {
         Self { name, parameters }
     }
 }
+#[derive(Debug, Clone)]
+struct VariableMap(HashMap<String, Value>);
+impl VariableMap {
+    fn new() -> Self {
+        Self(HashMap::new())
+    }
+}
+//This makes that you can access the map
+// directly wothout the neec of the ".0"
+impl std::ops::Deref for VariableMap {
+    type Target = HashMap<String, Value>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Debug, Clone)]
-struct Flag {
-    name: String,
-    position: usize,
+struct FlagMap(HashMap<String, usize>);
+impl FlagMap {
+    fn new(flag_map: HashMap<String, usize>) -> Self {
+        Self(flag_map)
+    }
 }
-impl Flag {
-    fn new(name: String, position: usize) -> Self {
-        Self { name, position }
+//This makes that you can access the map
+// directly wothout the neec of the ".0"
+impl std::ops::Deref for FlagMap {
+    type Target = HashMap<String, usize>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
@@ -94,17 +147,18 @@ impl Struct {
 }
 
 #[derive(Debug, Clone)]
-struct Procedure {
+pub struct Procedure {
     name: String,
     input_vars_and_types: Option<Vec<(String, String)>>,
     output_type: Option<String>,
     output_value: Option<Value>,
 
     action_list: Vec<Action>,
-    flag_list: Vec<Flag>,
-    var_list: Vec<Variable>,
+    flag_map: FlagMap,
+    var_map: VariableMap,
 
     next_action_index: usize,
+    current_action_index: usize,
 }
 
 impl Procedure {
@@ -113,7 +167,7 @@ impl Procedure {
         input_vars_and_types: Option<Vec<(String, String)>>,
         output_type: Option<String>,
         action_vec: Vec<Action>,
-        flag_vec: Vec<Flag>,
+        flag_map: FlagMap,
         //line: usize,
     ) -> Self {
         Self {
@@ -122,21 +176,58 @@ impl Procedure {
             output_type,
             output_value: None,
             action_list: action_vec,
-            flag_list: flag_vec,
-            var_list: Vec::new(),
+            flag_map,
+            var_map: VariableMap::new(),
             next_action_index: 0,
+            current_action_index: 0,
             //line,
         }
     }
 
-    fn run_proc(input_values: Option<Vec<String>>) {
-        todo!()
+    pub fn get_parameters_values(&self) -> Vec<Value> {
+        let parameters = self.get_raw_parameters();
+        let mut param_values: Vec<Value> = Vec::new();
+
+        //Gets the value of each parameter
+        parameters
+            .iter()
+            .for_each(|param| param_values.push(self.get_value(param, self.current_action_index)));
+        return param_values;
     }
+
+    fn get_raw_parameters(&self) -> &Vec<String> {
+        let parameters = &self.action_list[self.current_action_index].parameters;
+        parameters
+    }
+
+    ///Gets the value of the given parameter
+    fn get_value(&self, param: &String, param_index: usize) -> Value {
+        todo!("get_value is not implemented yet")
+    }
+
+    ///Returns a mutable reference of the value of the variable found by the param
+    fn get_variable_value_mutref<'a>(&self, param: &String, param_index: usize) -> &'a mut Value {
+        todo!("get_variable is not implemented yet")
+    }
+
+    fn add_new_variable(&mut self, name: String, typee: String) {
+        assert!(!self.var_map.0.contains_key(&name));
+        let value = get_default_value_of_type(typee);
+        self.var_map.0.insert(name, value);
+    }
+
+    fn run_proc(input_values: Option<Vec<String>>) -> Option<Value> {
+        todo!("run_proc is not implemented yet")
+    }
+}
+
+fn get_default_value_of_type(typee: String) -> Value {
+    todo!("get_default_value_of_type is not implemented yet");
 }
 
 pub struct Interpreter {
     action_map: HashMap<String, fn(&mut Procedure)>,
-    block_list: Vec<Procedure>,
+    proc_list: Vec<Procedure>,
     struct_list: Vec<Struct>,
     string_literals_list: Vec<String>,
     block_call_stack: Vec<Procedure>,
@@ -144,8 +235,8 @@ pub struct Interpreter {
 impl Interpreter {
     pub fn new() -> Self {
         Self {
-            action_map: Self::hashmap_with_default_actions(),
-            block_list: Vec::new(),
+            action_map: std_actions::hashmap_with_default_actions(),
+            proc_list: Vec::new(),
             struct_list: Vec::new(),
             string_literals_list: Vec::new(),
             block_call_stack: Vec::new(),
@@ -422,6 +513,7 @@ impl Interpreter {
                             todo!("parsing input fields are not implementd yet")
                         }
                         Contex::ExpectingOutputType => {
+                            todo!("output type is not implemented yet");
                             //TODO: Validate type
                             output_type = Some(word.to_string());
                         }
@@ -446,65 +538,11 @@ impl Interpreter {
             }
         }
 
-        fn parse_instructions_to_actions(instructions: Vec<&str>) -> (Vec<Action>, Vec<Flag>) {
-            todo!()
+        fn parse_instructions_to_actions(instructions: Vec<&str>) -> (Vec<Action>, FlagMap) {
+            todo!("parse_instructions_to_actions is not implemented yet")
         }
     }
-
-    fn hashmap_with_default_actions() -> HashMap<String, fn(&mut Procedure)> {
-        let mut map = HashMap::<String, fn(&mut Procedure)>::new();
-
-        map.insert("crt".to_string(), crt);
-        map.insert("giv".to_string(), giv);
-        map.insert("exe".to_string(), exe);
-        map.insert("rtn".to_string(), rtn);
-        map.insert("jmp".to_string(), jmp);
-        map.insert("iff".to_string(), iff);
-        map.insert("ifn".to_string(), ifn);
-
-        assert!(map.len() == ACTIONCOUNT as usize);
-
-        map
-    }
 }
-
-//STANDART ACTIONS DEFINITION
-const ACTIONCOUNT: u8 = 8;
-fn crt(current_proc: &mut Procedure) {
-    todo!()
-}
-
-fn giv(current_proc: &mut Procedure) {
-    todo!()
-}
-
-fn exe(current_proc: &mut Procedure) {
-    todo!()
-}
-
-fn rtn(current_proc: &mut Procedure) {
-    todo!()
-}
-
-fn jmp(current_proc: &mut Procedure) {
-    todo!()
-}
-
-fn iff(current_proc: &mut Procedure) {
-    todo!()
-}
-
-fn ifn(current_proc: &mut Procedure) {
-    todo!()
-}
-
-/* Actions missing:
-    PARSE
-    SETARR
-    ARRLENGHT
-    JOINTEXT
-    SPLITTEXT
-*/
 
 #[derive(Debug, PartialEq)]
 pub enum AbisError {
