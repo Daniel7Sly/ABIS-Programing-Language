@@ -101,7 +101,7 @@ fn ifn(current_proc: &mut Procedure) {
 }
 
 /*
-Actions missing:
+Actions of previous version missing:
     PARSE
     SETARR
     ARRLENGHT
@@ -109,8 +109,9 @@ Actions missing:
     SPLITTEXT
 
 Actions that could be added:
-    LOG
-    STP (stop)
+    LOG : text
+    STP : (stops the interpreter)
+    ASSERT : bool (same as STP but only stops if its false)
 */
 
 pub(crate) fn hashmap_with_default_actions() -> HashMap<String, fn(&mut Procedure)> {

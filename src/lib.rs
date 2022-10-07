@@ -111,7 +111,7 @@ impl VariableMap {
     }
 }
 //This makes that you can access the map
-// directly wothout the neec of the ".0"
+// directly without the need of the ".0"
 impl std::ops::Deref for VariableMap {
     type Target = HashMap<String, Value>;
     fn deref(&self) -> &Self::Target {
@@ -127,7 +127,7 @@ impl FlagMap {
     }
 }
 //This makes that you can access the map
-// directly wothout the neec of the ".0"
+// directly without the need of the ".0"
 impl std::ops::Deref for FlagMap {
     type Target = HashMap<String, usize>;
     fn deref(&self) -> &Self::Target {
@@ -135,14 +135,35 @@ impl std::ops::Deref for FlagMap {
     }
 }
 
+// #[derive(Debug, Clone)]
+// struct Struct {
+//     name: String,
+//     fields: Vec<(String, String)>, //(type, name)
+// }
+// impl Struct {
+//     fn new(name: String, fields: Vec<(String, String)>) -> Self {
+//         Self { name, fields }
+//     }
+// }
+
 #[derive(Debug, Clone)]
-struct Struct {
-    name: String,
-    fields: Vec<(String, String)>, //(type, name)
+struct StructMap(HashMap<String, Vec<(String, String)>>);
+impl StructMap {
+    fn new() -> Self {
+        StructMap(HashMap::new())
+    }
 }
-impl Struct {
-    fn new(name: String, fields: Vec<(String, String)>) -> Self {
-        Self { name, fields }
+//This makes that you can access the map
+// directly without the need of the ".0"
+impl std::ops::Deref for StructMap {
+    type Target = HashMap<String, Vec<(String, String)>>;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+impl std::ops::DerefMut for StructMap {
+    fn deref_mut(&mut self) -> &mut HashMap<String, Vec<(String, String)>> {
+        &mut self.0
     }
 }
 
@@ -228,7 +249,7 @@ fn get_default_value_of_type(typee: String) -> Value {
 pub struct Interpreter {
     action_map: HashMap<String, fn(&mut Procedure)>,
     proc_list: Vec<Procedure>,
-    struct_list: Vec<Struct>,
+    struct_map: StructMap,
     string_literals_list: Vec<String>,
     block_call_stack: Vec<Procedure>,
 }
@@ -237,14 +258,14 @@ impl Interpreter {
         Self {
             action_map: std_actions::hashmap_with_default_actions(),
             proc_list: Vec::new(),
-            struct_list: Vec::new(),
+            struct_map: StructMap::new(),
             string_literals_list: Vec::new(),
             block_call_stack: Vec::new(),
         }
     }
 
     pub fn add_action(&mut self) {
-        todo!("adding actions is not implemented yet!")
+        todo!("add_action is not implemented yet!")
     }
 
     ///Loads the current script reciving it as a string to the interpreter.
@@ -261,11 +282,9 @@ impl Interpreter {
         todo!()
     }
 
-    fn parse_script(
-        script: String,
-    ) -> Result<(Vec<Procedure>, Vec<Struct>, Vec<String>), AbisError> {
+    fn parse_script(script: String) -> Result<(Vec<Procedure>, StructMap, Vec<String>), AbisError> {
         let mut procedure_list: Vec<Procedure> = Vec::new();
-        let mut struct_list: Vec<Struct> = Vec::new();
+        let mut struct_map: StructMap = StructMap::new();
         let mut string_literals_list: Vec<String> = Vec::new();
 
         //TODO implement line position for erros.
@@ -310,17 +329,17 @@ impl Interpreter {
                 return Err(AbisError::InvalidScript);
             }
 
-            struct_list = parse_structs(words.clone())?;
+            struct_map = parse_structs(words.clone())?;
             procedure_list = parse_procs(words)?;
         }
 
-        return Ok((procedure_list, struct_list, string_literals_list));
+        return Ok((procedure_list, struct_map, string_literals_list));
 
-        fn parse_structs(words: Vec<&str>) -> Result<Vec<Struct>, AbisError> {
+        fn parse_structs(words: Vec<&str>) -> Result<StructMap, AbisError> {
             //The final list containing the structs
-            let mut struct_list: Vec<Struct> = Vec::new();
+            let mut struct_map: StructMap = StructMap::new();
             //List containing the names of already created structs
-            let mut struct_names: Vec<String> = Vec::new();
+            // let mut struct_names: Vec<String> = Vec::new();
             //List containing the names of already created fields
             let mut fields_names: Vec<String> = Vec::new();
 
@@ -353,9 +372,7 @@ impl Interpreter {
                                 return Err(AbisError::StructDefinitionEndedWithoutFields);
                             }
 
-                            struct_list.push(Struct::new(name.clone(), fields.clone()));
-
-                            struct_names.push(name.clone());
+                            struct_map.insert(name.clone(), fields.clone());
 
                             //Resets name fields and fields_names for new structs
                             name.clear();
@@ -372,18 +389,17 @@ impl Interpreter {
                         }
 
                         Contex::ExpectingStructName => {
-                            if struct_names.contains(&word.to_string()) {
+                            if struct_map.contains_key(&word.to_string()) {
                                 return Err(AbisError::DuplicateStructName);
                             }
 
-                            struct_names.push(word.to_string());
                             name = word.to_string();
                         }
 
                         Contex::ExpectingFieldType => {
                             if word == TYPE_TEXT || word == TYPE_NUM || word == TYPE_BOOL {
                                 field_type = word.to_string();
-                            } else if struct_names.contains(&word.to_string()) {
+                            } else if struct_map.contains_key(&word.to_string()) {
                                 field_type = word.to_string();
                             } else {
                                 return Err(AbisError::TypeNotDefined);
@@ -411,7 +427,7 @@ impl Interpreter {
                 }
             }
 
-            return Ok(struct_list);
+            return Ok(struct_map);
 
             enum Contex {
                 WaitingStructKW,
