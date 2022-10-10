@@ -41,13 +41,24 @@ end
 proc main is
     var num a giv a 20
     var num b giv b 10
-    giv a @sum_of a b
-    giv a ( a + a )
-    return: "a"
+    giv $a @sum_of $a $b
+    giv $a ( $a + $a )
+    println "aaa asda asdasd asd as asd"
+    println $a
 end
 
 proc assert in bool expr is 
     ifn expr crash
     rtn
+    crash: stp
+end
+
+
+_________________________________________________
+
+
+   proc assert in bool expr is "adas asdasd dd a adf asdas das ad sad" 
+     ifn expr crash
+     rtn
     crash: stp
 end

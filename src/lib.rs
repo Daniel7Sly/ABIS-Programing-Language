@@ -29,10 +29,11 @@ pub enum ValueForm {
     Array(Vec<Value>),
 }
 impl ValueForm {
+    ///Returns the normal value contained. It panics if the value is not Normal
     pub fn get_normal_value(&self) -> &String {
         match self {
             ValueForm::Normal(x) => x,
-            _ => panic!("atempted to get normal value without being normal"),
+            _ => panic!("atempted to get normal valueForm without being normal"),
         }
     }
 
@@ -79,20 +80,6 @@ impl Value {
     }
 }
 
-// #[derive(Debug, Clone)]
-// struct Variable {
-//     name: String,
-//     value: Value,
-// }
-// impl Variable {
-//     fn new(name: &String, typee: &String) -> Self {
-//         Variable {
-//             name: name.clone(),
-//             value: Value::new(typee),
-//         }
-//     }
-// }
-
 #[derive(Debug, Clone)]
 struct Action {
     name: String,
@@ -103,6 +90,7 @@ impl Action {
         Self { name, parameters }
     }
 }
+
 #[derive(Debug, Clone)]
 struct VariableMap(HashMap<String, Value>);
 impl VariableMap {
@@ -134,17 +122,6 @@ impl std::ops::Deref for FlagMap {
         &self.0
     }
 }
-
-// #[derive(Debug, Clone)]
-// struct Struct {
-//     name: String,
-//     fields: Vec<(String, String)>, //(type, name)
-// }
-// impl Struct {
-//     fn new(name: String, fields: Vec<(String, String)>) -> Self {
-//         Self { name, fields }
-//     }
-// }
 
 #[derive(Debug, Clone)]
 struct StructMap(HashMap<String, Vec<(String, String)>>);
@@ -246,9 +223,13 @@ fn get_default_value_of_type(typee: String) -> Value {
     todo!("get_default_value_of_type is not implemented yet");
 }
 
+type ProceduresMap = HashMap<String, Procedure>;
+
+type token = (String, usize, usize);
+
 pub struct Interpreter {
     action_map: HashMap<String, fn(&mut Procedure)>,
-    proc_list: Vec<Procedure>,
+    proc_list: ProceduresMap,
     struct_map: StructMap,
     string_literals_list: Vec<String>,
     block_call_stack: Vec<Procedure>,
@@ -257,7 +238,7 @@ impl Interpreter {
     pub fn new() -> Self {
         Self {
             action_map: std_actions::hashmap_with_default_actions(),
-            proc_list: Vec::new(),
+            proc_list: HashMap::new(),
             struct_map: StructMap::new(),
             string_literals_list: Vec::new(),
             block_call_stack: Vec::new(),
@@ -270,70 +251,76 @@ impl Interpreter {
 
     ///Loads the current script reciving it as a string to the interpreter.
     ///
-    /// Returns a true representing if the script was parsed sucsesfully.
+    /// Returns a AbisError if the scrript could not be parsed.
     ///
     /// The String should contain all the text of a .abis file.
     fn load_script(&mut self, script: String) -> Result<(), AbisError> {
-        let (block_list, struct_list, string_literals_list) = Self::parse_script(script)?;
-        todo!()
+        let (block_list, struct_list) = Self::parse_script(script)?;
+        todo!("load_script is not implemented yet");
     }
 
     pub fn run_script(&mut self) -> Result<(), AbisError> {
-        todo!()
+        todo!("run_script is not implemented yet");
     }
 
-    fn parse_script(script: String) -> Result<(Vec<Procedure>, StructMap, Vec<String>), AbisError> {
-        let mut procedure_list: Vec<Procedure> = Vec::new();
+    fn parse_script(script: String) -> Result<(ProceduresMap, StructMap), AbisError> {
+        let tokens: Vec<token> = lexer(script);
+
+        let mut procedures_map: ProceduresMap = HashMap::new();
         let mut struct_map: StructMap = StructMap::new();
-        let mut string_literals_list: Vec<String> = Vec::new();
 
-        //TODO implement line position for erros.
+        // word row col
 
-        let mut uncommented_script: String = script
-            .lines()
-            .into_iter()
-            .filter(|x| !x.trim().starts_with("#"))
-            .collect();
+        return Ok((procedures_map, struct_map));
 
-        //stores and replaces the string literals
-        {
-            let double_quotes_positions: Vec<usize> =
-                uncommented_script.match_indices('"').map(|x| x.0).collect();
+        fn lexer(script: String) -> Vec<token> {
+            let mut token_vec: Vec<token> = Vec::new();
 
-            if double_quotes_positions.len() % 2 != 0 {
-                return Err(AbisError::StringDeclarationWithoutEnding);
+            let lines: Vec<&str> = script.lines().collect();
+
+            for (line_pos, line) in lines.iter().enumerate() {
+                // skip line if comment
+                if line.trim_start().starts_with("#") {
+                    continue;
+                }
+
+                // col word
+                let words: Vec<(usize, &str)> = split_whitespace_indices(line).collect();
+
+                let mut reading_string_literal: bool = false;
+                let mut string_literal = String::new();
+
+                for (col, word) in words {
+                    if word.starts_with("\"") {
+                        reading_string_literal = true;
+                        string_literal.push_str(word);
+                    } else if reading_string_literal {
+                        string_literal.push_str(format!(" {}", word).as_str());
+
+                        if word.ends_with("\"") {
+                            reading_string_literal = false;
+
+                            token_vec.push((string_literal.clone(), line_pos + 1, col + 1));
+                            string_literal.clear();
+                        }
+                    } else {
+                        token_vec.push((word.to_string(), line_pos + 1, col + 1));
+                    }
+                }
             }
 
-            let mut count: usize = 0;
-            for (i, pos1) in double_quotes_positions.iter().enumerate().step_by(2).rev() {
-                let pos2 = double_quotes_positions[i + 1];
-                string_literals_list.push(uncommented_script.clone()[*pos1 + 1..pos2].to_string());
-                uncommented_script.replace_range(*pos1..pos2 + 1, format!("${}", count).as_str());
-                count += 1;
+            return token_vec;
+
+            // credit: https://stackoverflow.com/a/67098851
+            fn split_whitespace_indices(s: &str) -> impl Iterator<Item = (usize, &str)> {
+                return s
+                    .split_whitespace()
+                    .map(move |sub| (addr_of(sub) - addr_of(s), sub));
+                fn addr_of(s: &str) -> usize {
+                    s.as_ptr() as usize
+                }
             }
         }
-
-        // Spaces parentheses
-        uncommented_script = uncommented_script.replace("(", " ( ");
-        uncommented_script = uncommented_script.replace(")", " ) ");
-
-        //Removes white spaces
-        uncommented_script.retain(|c| c != '\t' || c != '\n');
-
-        // word processing
-        {
-            let words: Vec<&str> = uncommented_script.split(' ').collect();
-            let words: Vec<&str> = words.into_iter().filter(|x| *x != "").collect();
-
-            if words.len() < 4 {
-                return Err(AbisError::InvalidScript);
-            }
-
-            struct_map = parse_structs(words.clone())?;
-            procedure_list = parse_procs(words)?;
-        }
-
-        return Ok((procedure_list, struct_map, string_literals_list));
 
         fn parse_structs(words: Vec<&str>) -> Result<StructMap, AbisError> {
             //The final list containing the structs
@@ -438,10 +425,8 @@ impl Interpreter {
             }
         }
 
-        fn parse_procs(words: Vec<&str>) -> Result<Vec<Procedure>, AbisError> {
-            let mut proc_list: Vec<Procedure> = Vec::new();
-            //Contains the names of already created procedures
-            let mut proc_names: Vec<&str> = Vec::new();
+        fn parse_procs(words: Vec<&str>) -> Result<ProceduresMap, AbisError> {
+            let mut proc_map: ProceduresMap = HashMap::new();
 
             //Things of the procedure
             let mut proc_name: String = String::new();
@@ -485,17 +470,20 @@ impl Interpreter {
                         Contex::GettingActions => {
                             let action_vec = parse_instructions_to_actions(instructions.clone());
 
-                            proc_list.push(Procedure::new(
+                            proc_map.insert(
                                 proc_name.clone(),
-                                if proc_in_vars.len() == 0 {
-                                    None
-                                } else {
-                                    Some(proc_in_vars.clone())
-                                },
-                                output_type.clone(),
-                                action_vec.0,
-                                action_vec.1,
-                            ));
+                                Procedure::new(
+                                    proc_name.clone(),
+                                    if proc_in_vars.len() == 0 {
+                                        None
+                                    } else {
+                                        Some(proc_in_vars.clone())
+                                    },
+                                    output_type.clone(),
+                                    action_vec.0,
+                                    action_vec.1,
+                                ),
+                            );
 
                             instructions.clear();
                             proc_name.clear();
@@ -509,12 +497,11 @@ impl Interpreter {
 
                     _ => match current_contex {
                         Contex::ExpectingProcName => {
-                            if proc_names.contains(&word) {
+                            if proc_map.contains_key(&word.to_string()) {
                                 return Err(AbisError::DuplicateProcedureName);
                             }
 
                             proc_name = word.to_string();
-                            proc_names.push(word);
                         }
 
                         Contex::WaitingProcKW => continue,
@@ -523,10 +510,10 @@ impl Interpreter {
                         }
                         Contex::ExpectingIsKw => return Err(AbisError::ExpectingIsKeyWord),
                         Contex::ExpectingFieldName => {
-                            todo!("parsing input fields are not implementd yet")
+                            todo!("parsing input fields are not implemented yet")
                         }
                         Contex::ExpectingFieldType => {
-                            todo!("parsing input fields are not implementd yet")
+                            todo!("parsing input fields are not implemented yet")
                         }
                         Contex::ExpectingOutputType => {
                             todo!("output type is not implemented yet");
@@ -540,7 +527,7 @@ impl Interpreter {
                 }
             }
 
-            return Ok(proc_list);
+            return Ok(proc_map);
 
             enum Contex {
                 WaitingProcKW,
