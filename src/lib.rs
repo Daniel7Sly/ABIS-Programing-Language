@@ -4,8 +4,7 @@ use std::collections::{self, HashMap};
 
 // use crate::std_actions::ACTIONCOUNT;
 
-// keywords
-const KW_ARR: &[&str] = &[KW_PROC, KW_STRUCT];
+// KEYWORDS:
 const KW_PROC: &str = "proc";
 const KW_STRUCT: &str = "struct";
 const KW_IS: &str = "is";
@@ -19,7 +18,7 @@ const KW_COUNT: u8 = 6;
 
 // basic types
 pub const TYPE_TEXT: &str = "TEXT";
-pub const TYPE_NUM: &str = "NUM";
+pub const TYPE_NUMB: &str = "NUMB";
 pub const TYPE_BOOL: &str = "BOOL";
 
 #[derive(Debug, Clone)]
@@ -69,7 +68,7 @@ impl Value {
     fn new(typee: &str) -> Self {
         let value: ValueForm = match typee {
             TYPE_TEXT => ValueForm::Normal("".to_string()),
-            TYPE_NUM => ValueForm::Normal("0".to_string()),
+            TYPE_NUMB => ValueForm::Normal("0".to_string()),
             TYPE_BOOL => ValueForm::Normal("false".to_string()),
             _ => todo!("creation of new values of structs are not implemented yet!"),
         };
@@ -225,6 +224,7 @@ fn get_default_value_of_type(typee: String) -> Value {
 
 type ProceduresMap = HashMap<String, Procedure>;
 
+// word row col
 type token = (String, usize, usize);
 
 pub struct Interpreter {
@@ -266,10 +266,7 @@ impl Interpreter {
     fn parse_script(script: String) -> Result<(ProceduresMap, StructMap), AbisError> {
         let tokens: Vec<token> = lexer(script);
 
-        let mut procedures_map: ProceduresMap = HashMap::new();
-        let mut struct_map: StructMap = StructMap::new();
-
-        // word row col
+        let (struct_map, procedures_map) = parser(tokens)?;
 
         return Ok((procedures_map, struct_map));
 
@@ -322,151 +319,50 @@ impl Interpreter {
             }
         }
 
-        fn parse_structs(words: Vec<&str>) -> Result<StructMap, AbisError> {
-            //The final list containing the structs
+        fn parser(tokens: Vec<token>) -> Result<(StructMap, ProceduresMap), AbisError> {
+            //For creating structs
             let mut struct_map: StructMap = StructMap::new();
-            //List containing the names of already created structs
-            // let mut struct_names: Vec<String> = Vec::new();
-            //List containing the names of already created fields
-            let mut fields_names: Vec<String> = Vec::new();
-
-            let mut curr_contex: Contex = Contex::WaitingStructKW;
-
-            let mut name = String::new();
+            let mut struct_name = String::new();
             let mut field_type = String::new();
-
             let mut fields: Vec<(String, String)> = Vec::new(); //(type, name)
 
-            //let mut field_name = String::new();
-
-            for word in words.into_iter() {
-                match word {
-                    KW_STRUCT => match curr_contex {
-                        Contex::WaitingStructKW => {
-                            curr_contex = Contex::ExpectingStructName;
-                        }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
-                    },
-                    KW_IS => match curr_contex {
-                        Contex::ExpectingIsKw => {
-                            curr_contex = Contex::ExpectingFieldType;
-                        }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
-                    },
-                    KW_END => match curr_contex {
-                        Contex::ExpectingFieldType => {
-                            if fields.len() < 1 {
-                                return Err(AbisError::StructDefinitionEndedWithoutFields);
-                            }
-
-                            struct_map.insert(name.clone(), fields.clone());
-
-                            //Resets name fields and fields_names for new structs
-                            name.clear();
-                            fields.clear();
-                            fields_names.clear();
-
-                            curr_contex = Contex::WaitingStructKW;
-                        }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
-                    },
-                    _ => match curr_contex {
-                        Contex::WaitingStructKW => {
-                            continue;
-                        }
-
-                        Contex::ExpectingStructName => {
-                            if struct_map.contains_key(&word.to_string()) {
-                                return Err(AbisError::DuplicateStructName);
-                            }
-
-                            name = word.to_string();
-                        }
-
-                        Contex::ExpectingFieldType => {
-                            if word == TYPE_TEXT || word == TYPE_NUM || word == TYPE_BOOL {
-                                field_type = word.to_string();
-                            } else if struct_map.contains_key(&word.to_string()) {
-                                field_type = word.to_string();
-                            } else {
-                                return Err(AbisError::TypeNotDefined);
-                            }
-
-                            curr_contex = Contex::ExpectingFieldName;
-                        }
-
-                        Contex::ExpectingFieldName => {
-                            if fields_names.contains(&word.to_string()) {
-                                return Err(AbisError::DuplicateFieldName);
-                            }
-
-                            fields.push((field_type.clone(), word.to_string()));
-
-                            field_type = String::new();
-
-                            curr_contex = Contex::ExpectingFieldType;
-                        }
-
-                        Contex::ExpectingIsKw => {
-                            return Err(AbisError::ExpectingIsKeyWord);
-                        }
-                    },
-                }
-            }
-
-            return Ok(struct_map);
-
-            enum Contex {
-                WaitingStructKW,
-                ExpectingStructName,
-                ExpectingIsKw,
-                ExpectingFieldType,
-                ExpectingFieldName,
-            }
-        }
-
-        fn parse_procs(words: Vec<&str>) -> Result<ProceduresMap, AbisError> {
+            //For creating procedures
             let mut proc_map: ProceduresMap = HashMap::new();
-
-            //Things of the procedure
             let mut proc_name: String = String::new();
             let mut proc_in_vars: Vec<(String, String)> = Vec::new();
             let mut output_type: Option<String> = None;
-            let mut instructions: Vec<&str> = Vec::new();
+            let mut instructions: Vec<token> = Vec::new();
 
-            let mut current_contex = Contex::WaitingProcKW;
+            let mut current_contex = Contex::WaitingProcOrStructKW;
 
-            for word in words.into_iter() {
+            //TODO: add verification for field types and names can not be action names and have special caracters ("& $ # @").
+
+            assert!(KW_COUNT == 6, "This paniked because a new key word was created. Pls update the parser and this assert operation for the new KW.");
+            for token in tokens {
+                let word = token.0.as_str();
                 match word {
-                    KW_PROC => match current_contex {
-                        Contex::WaitingProcKW => {
-                            current_contex = Contex::ExpectingProcName;
+                    KW_STRUCT => match current_contex {
+                        Contex::WaitingProcOrStructKW => {
+                            current_contex = Contex::ExpectingStructName;
                         }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
+                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
                     },
-
-                    KW_IN => match current_contex {
-                        Contex::ExpectingIsOrInOrOutKW => {
-                            current_contex = Contex::ExpectingFieldType;
-                        }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
-                    },
-
-                    KW_OUT => match current_contex {
-                        Contex::ExpectingFieldType | Contex::ExpectingIsOrInOrOutKW => {
-                            current_contex = Contex::ExpectingOutputType;
-                        }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
-                    },
-
-                    KW_IS => match current_contex {
-                        Contex::ExpectingIsKw => {
-                            current_contex = Contex::GettingActions;
-                        }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
-                    },
-
                     KW_END => match current_contex {
+                        Contex::ExpectingFieldTypeForStruct => {
+                            if fields.len() < 1 {
+                                return Err(AbisError::StructDefinitionEndedWithoutFields(token));
+                            }
+
+                            struct_map.insert(struct_name.clone(), fields.clone());
+
+                            //Resets name fields and fields_names for new structs
+                            struct_name.clear();
+                            fields.clear();
+                            //fields_names.clear();
+
+                            current_contex = Contex::WaitingProcOrStructKW;
+                        }
+
                         Contex::GettingActions => {
                             let action_vec = parse_instructions_to_actions(instructions.clone());
 
@@ -490,29 +386,102 @@ impl Interpreter {
                             proc_in_vars.clear();
                             output_type = None;
 
-                            current_contex = Contex::WaitingProcKW;
+                            current_contex = Contex::WaitingProcOrStructKW;
                         }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext),
+
+                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                    },
+                    KW_PROC => match current_contex {
+                        Contex::WaitingProcOrStructKW => {
+                            current_contex = Contex::ExpectingProcName;
+                        }
+                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                    },
+
+                    KW_IN => match current_contex {
+                        Contex::ExpectingIsOrInOrOutKW => {
+                            current_contex = Contex::ExpectingFieldTypeForProcedure;
+                        }
+                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                    },
+
+                    KW_OUT => match current_contex {
+                        Contex::ExpectingFieldTypeForProcedure | Contex::ExpectingIsOrInOrOutKW => {
+                            current_contex = Contex::ExpectingOutputType;
+                        }
+                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                    },
+
+                    KW_IS => match current_contex {
+                        Contex::ExpectingProcIsKW => {
+                            current_contex = Contex::GettingActions;
+                        }
+                        Contex::ExpectingStructIsKW => {
+                            current_contex = Contex::ExpectingFieldTypeForStruct;
+                        }
+                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
                     },
 
                     _ => match current_contex {
+                        Contex::WaitingProcOrStructKW => {
+                            return Err(AbisError::ExpectedStructOrProcKWs(token));
+                        }
+
+                        Contex::ExpectingStructName => {
+                            if struct_map.contains_key(&word.to_string()) {
+                                return Err(AbisError::DuplicateStructName(token));
+                            }
+
+                            struct_name = word.to_string();
+
+                            current_contex = Contex::ExpectingStructIsKW;
+                        }
+
+                        Contex::ExpectingFieldTypeForStruct => {
+                            if word == TYPE_TEXT || word == TYPE_NUMB || word == TYPE_BOOL {
+                                field_type = word.to_string();
+                            } else if struct_map.contains_key(&word.to_string()) {
+                                field_type = word.to_string();
+                            } else {
+                                return Err(AbisError::TypeNotDefined(token));
+                            }
+
+                            current_contex = Contex::ExpectingStructFieldName;
+                        }
+
+                        Contex::ExpectingStructFieldName => {
+                            if fields.iter().any(|x| x.1 == word.to_string()) {
+                                return Err(AbisError::DuplicateFieldName(token));
+                            }
+
+                            fields.push((field_type.clone(), word.to_string()));
+
+                            field_type = String::new();
+
+                            current_contex = Contex::ExpectingFieldTypeForStruct;
+                        }
+                        //Procedures parsing--------------------------------------------------
                         Contex::ExpectingProcName => {
                             if proc_map.contains_key(&word.to_string()) {
-                                return Err(AbisError::DuplicateProcedureName);
+                                return Err(AbisError::DuplicateProcedureName(token));
                             }
 
                             proc_name = word.to_string();
+
+                            current_contex = Contex::ExpectingIsOrInOrOutKW;
                         }
 
-                        Contex::WaitingProcKW => continue,
+                        //Contex::WaitingProcKW => continue,
                         Contex::ExpectingIsOrInOrOutKW => {
-                            return Err(AbisError::ExpectedIsOrInOrOutKW)
+                            return Err(AbisError::ExpectedIsOrInOrOutKW(token))
                         }
-                        Contex::ExpectingIsKw => return Err(AbisError::ExpectingIsKeyWord),
-                        Contex::ExpectingFieldName => {
+                        Contex::ExpectingProcIsKW | Contex::ExpectingStructIsKW => {
+                            return Err(AbisError::ExpectingIsKeyWord(token))
+                        }
+                        Contex::ExpectingProcedureFieldName => {
                             todo!("parsing input fields are not implemented yet")
                         }
-                        Contex::ExpectingFieldType => {
+                        Contex::ExpectingFieldTypeForProcedure => {
                             todo!("parsing input fields are not implemented yet")
                         }
                         Contex::ExpectingOutputType => {
@@ -521,27 +490,31 @@ impl Interpreter {
                             output_type = Some(word.to_string());
                         }
                         Contex::GettingActions => {
-                            instructions.push(word);
+                            instructions.push(token.clone());
                         }
                     },
                 }
             }
 
-            return Ok(proc_map);
+            return Ok((struct_map, proc_map));
 
             enum Contex {
-                WaitingProcKW,
+                WaitingProcOrStructKW,
                 ExpectingProcName,
                 ExpectingIsOrInOrOutKW,
-                ExpectingIsKw,
-                ExpectingFieldName,
-                ExpectingFieldType,
+                ExpectingStructIsKW,
+                ExpectingProcIsKW,
+                ExpectingStructFieldName,
+                ExpectingProcedureFieldName,
+                ExpectingFieldTypeForStruct,
+                ExpectingFieldTypeForProcedure,
                 ExpectingOutputType,
+                ExpectingStructName,
                 GettingActions,
             }
         }
 
-        fn parse_instructions_to_actions(instructions: Vec<&str>) -> (Vec<Action>, FlagMap) {
+        fn parse_instructions_to_actions(instructions: Vec<token>) -> (Vec<Action>, FlagMap) {
             todo!("parse_instructions_to_actions is not implemented yet")
         }
     }
@@ -549,20 +522,22 @@ impl Interpreter {
 
 #[derive(Debug, PartialEq)]
 pub enum AbisError {
-    TypeNotDefined,
-    NoLoadedScript,
-    StringDeclarationWithoutEnding,
-    InvalidBlockStructure,
-    InvalidScript,
-    InvalidKeyWordInCurrentContext,
-    DuplicateStructName,
-    StructDefinitionEndedWithoutFields,
-    DuplicateFieldName,
-    ExpectingIsKeyWord,
-    StructDefinitionEndedIncompletly,
-    NameOfStructFieldCanNotHaveNameOfAType,
+    TypeNotDefined(token),
+    NoLoadedScript(token),
+    StringDeclarationWithoutEnding(token),
+    InvalidBlockStructure(token),
+    InvalidScript(token),
+    InvalidKeyWordInCurrentContext(token),
+    DuplicateStructName(token),
+    StructDefinitionEndedWithoutFields(token),
+    DuplicateFieldName(token),
+    ExpectingIsKeyWord(token),
+    StructDefinitionEndedIncompletly(token),
+    NameOfStructFieldCanNotHaveNameOfAType(token),
+
+    ExpectedStructOrProcKWs(token),
 
     //Proc Errors
-    DuplicateProcedureName,
-    ExpectedIsOrInOrOutKW,
+    DuplicateProcedureName(token),
+    ExpectedIsOrInOrOutKW(token),
 }
