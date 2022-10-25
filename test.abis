@@ -47,6 +47,8 @@ proc main is
     println $a
 end
 
+const ROW_COUNT 10 end
+
 proc assert in bool expr is 
     ifn expr crash
     rtn
@@ -57,8 +59,13 @@ end
 _________________________________________________
 
 
-   proc assert in bool expr is "adas asdasd dd a adf asdas das ad sad" 
-     ifn expr crash
-     rtn
+proc assert in bool expr is "adas asdasd dd a adf asdas das ad sad" 
+    ifn expr crash
+    rtn
     crash: stp
+end
+
+struct AAA is
+    type name
+    type name
 end

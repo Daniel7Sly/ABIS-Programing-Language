@@ -2,43 +2,84 @@ mod std_actions;
 
 use std::collections::{self, HashMap};
 
+use static_assertions::const_assert;
+use std_actions::hashmap_with_default_actions;
+
 // use crate::std_actions::ACTIONCOUNT;
 
 // KEYWORDS:
-const KW_PROC: &str = "proc";
-const KW_STRUCT: &str = "struct";
-const KW_IS: &str = "is";
-const KW_IN: &str = "in";
-const KW_OUT: &str = "out";
-const KW_END: &str = "end";
+const KEYWORDS: &[&str] = &["proc", "struct", "is", "in", "out", "end" /*"const"*/];
+const KW_PROC: &str = KEYWORDS[0];
+const KW_STRUCT: &str = KEYWORDS[1];
+const KW_IS: &str = KEYWORDS[2];
+const KW_IN: &str = KEYWORDS[3];
+const KW_OUT: &str = KEYWORDS[4];
+const KW_END: &str = KEYWORDS[5];
+// const KW_CONST: &str = KEYWORDS[6];
 
-// update this number if new keyword is added this will
+// if new keyword is added this will
 // trigger some errors to account for the new keyword
-const KW_COUNT: u8 = 6;
+const KEYWORDS_QUANT: usize = KEYWORDS.len();
 
 // basic types
 pub const TYPE_TEXT: &str = "TEXT";
 pub const TYPE_NUMB: &str = "NUMB";
 pub const TYPE_BOOL: &str = "BOOL";
 
+const DEF_TEXT_VALUE: String = String::new();
+const DEF_NUMB_VALUE: f64 = 0.0;
+const DEF_BOOL_VALUE: bool = false;
+
+//static mut action_map: HashMap<String, fn(&mut Procedure)> = HashMap::new();
+
 #[derive(Debug, Clone)]
 pub enum ValueForm {
     Struct(HashMap<String, Value>),
-    Normal(String),
+    NormalText(String),
+    NormalNumb(f64),
+    NormalBool(bool),
     Array(Vec<Value>),
 }
 impl ValueForm {
-    ///Returns the normal value contained. It panics if the value is not Normal
-    pub fn get_normal_value(&self) -> &String {
+    ///Returns a clone of the string value contained. It panics if the value is not NormalText
+    pub fn get_normal_text_value(&self) -> String {
         match self {
-            ValueForm::Normal(x) => x,
-            _ => panic!("atempted to get normal valueForm without being normal"),
+            ValueForm::NormalText(x) => x.clone(),
+            _ => panic!("atempted to get NormalText valueForm without being NormalText"),
+        }
+    }
+    ///Returns a clone of the f64 value contained. It panics if the value is not NormalNumb
+    pub fn get_normal_numb_value(&self) -> f64 {
+        match self {
+            ValueForm::NormalNumb(x) => x.clone(),
+            _ => panic!("atempted to get NormalNumb valueForm without being NormalNumb"),
+        }
+    }
+    ///Returns a clone of the bool value contained. It panics if the value is not NormalBool
+    pub fn get_normal_bool_value(&self) -> bool {
+        match self {
+            ValueForm::NormalBool(x) => x.clone(),
+            _ => panic!("atempted to get NormalBool valueForm without being NormalBool"),
         }
     }
 
-    pub fn is_normal(&self) -> bool {
+    pub fn is_normal_text(&self) -> bool {
         match self {
-            ValueForm::Normal(_) => true,
+            ValueForm::NormalText(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_normal_numb(&self) -> bool {
+        match self {
+            ValueForm::NormalNumb(_) => true,
+            _ => false,
+        }
+    }
+
+    pub fn is_normal_bool(&self) -> bool {
+        match self {
+            ValueForm::NormalBool(_) => true,
             _ => false,
         }
     }
@@ -67,10 +108,10 @@ pub struct Value {
 impl Value {
     fn new(typee: &str) -> Self {
         let value: ValueForm = match typee {
-            TYPE_TEXT => ValueForm::Normal("".to_string()),
-            TYPE_NUMB => ValueForm::Normal("0".to_string()),
-            TYPE_BOOL => ValueForm::Normal("false".to_string()),
-            _ => todo!("creation of new values of structs are not implemented yet!"),
+            TYPE_TEXT => ValueForm::NormalText(DEF_TEXT_VALUE),
+            TYPE_NUMB => ValueForm::NormalNumb(DEF_NUMB_VALUE),
+            TYPE_BOOL => ValueForm::NormalBool(DEF_BOOL_VALUE),
+            _ => todo!("creation of new values of structs/arrays are not implemented yet!"),
         };
         Value {
             typee: typee.to_string(),
@@ -122,8 +163,18 @@ impl std::ops::Deref for FlagMap {
     }
 }
 
+type name = String;
+type typee = String;
+type fields = HashMap<name, typee>;
+
 #[derive(Debug, Clone)]
-struct StructMap(HashMap<String, Vec<(String, String)>>);
+struct Struct {
+    name: String,
+    fields: fields,
+}
+
+#[derive(Debug, Clone)]
+struct StructMap(HashMap<name, Struct>);
 impl StructMap {
     fn new() -> Self {
         StructMap(HashMap::new())
@@ -132,13 +183,13 @@ impl StructMap {
 //This makes that you can access the map
 // directly without the need of the ".0"
 impl std::ops::Deref for StructMap {
-    type Target = HashMap<String, Vec<(String, String)>>;
+    type Target = HashMap<name, Struct>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 impl std::ops::DerefMut for StructMap {
-    fn deref_mut(&mut self) -> &mut HashMap<String, Vec<(String, String)>> {
+    fn deref_mut(&mut self) -> &mut HashMap<name, Struct> {
         &mut self.0
     }
 }
@@ -146,6 +197,7 @@ impl std::ops::DerefMut for StructMap {
 #[derive(Debug, Clone)]
 pub struct Procedure {
     name: String,
+    //                                type    name
     input_vars_and_types: Option<Vec<(String, String)>>,
     output_type: Option<String>,
     output_value: Option<Value>,
@@ -213,8 +265,35 @@ impl Procedure {
         self.var_map.0.insert(name, value);
     }
 
-    fn run_proc(input_values: Option<Vec<String>>) -> Option<Value> {
-        todo!("run_proc is not implemented yet")
+    fn add_new_variable_with_value(&mut self, name: String, typee: String, value: Value) {
+        todo!()
+    }
+
+    fn run_proc(&mut self, input_values: Option<Vec<Value>>) -> Option<Value> {
+        if input_values.is_some() {
+            assert!(self.input_vars_and_types.is_some());
+            assert!(
+                self.input_vars_and_types.clone().unwrap().len()
+                    == input_values.as_ref().unwrap().len()
+            );
+        }
+        match input_values {
+            Some(iv) => iv.iter().enumerate().for_each(|(i, input_value)| {
+                let (typee, name) = &self.input_vars_and_types.clone().unwrap()[i];
+                self.add_new_variable_with_value(name.clone(), typee.clone(), input_value.clone());
+            }),
+            None => {}
+        }
+
+        //Run procedure
+        let mut i: usize = 0;
+        while i < self.action_list.len() {
+            let action = self.action_list[i].clone();
+            todo!("run_proc is not implemnted yet");
+            i += 1;
+        }
+
+        return None;
     }
 }
 
@@ -229,7 +308,7 @@ type token = (String, usize, usize);
 
 pub struct Interpreter {
     action_map: HashMap<String, fn(&mut Procedure)>,
-    proc_list: ProceduresMap,
+    proc_map: ProceduresMap,
     struct_map: StructMap,
     string_literals_list: Vec<String>,
     block_call_stack: Vec<Procedure>,
@@ -238,7 +317,7 @@ impl Interpreter {
     pub fn new() -> Self {
         Self {
             action_map: std_actions::hashmap_with_default_actions(),
-            proc_list: HashMap::new(),
+            proc_map: HashMap::new(),
             struct_map: StructMap::new(),
             string_literals_list: Vec::new(),
             block_call_stack: Vec::new(),
@@ -335,9 +414,9 @@ impl Interpreter {
 
             let mut current_contex = Contex::WaitingProcOrStructKW;
 
-            //TODO: add verification for field types and names can not be action names and have special caracters ("& $ # @").
+            //TODO: add verification for field types and names can not be action names and have special caracters ("& $ # @ . = + * - / " | ? ( ) [ ] { }").
 
-            assert!(KW_COUNT == 6, "This paniked because a new key word was created. Pls update the parser and this assert operation for the new KW.");
+            const_assert!(KEYWORDS_QUANT == 6);
             for token in tokens {
                 let word = token.0.as_str();
                 match word {
@@ -349,22 +428,11 @@ impl Interpreter {
                     },
                     KW_END => match current_contex {
                         Contex::ExpectingFieldTypeForStruct => {
-                            if fields.len() < 1 {
-                                return Err(AbisError::StructDefinitionEndedWithoutFields(token));
-                            }
-
-                            struct_map.insert(struct_name.clone(), fields.clone());
-
-                            //Resets name fields and fields_names for new structs
-                            struct_name.clear();
-                            fields.clear();
-                            //fields_names.clear();
-
-                            current_contex = Contex::WaitingProcOrStructKW;
+                            todo!();
                         }
 
                         Contex::GettingActions => {
-                            let action_vec = parse_instructions_to_actions(instructions.clone());
+                            let action_vec = parse_proc_body(instructions.clone());
 
                             proc_map.insert(
                                 proc_name.clone(),
@@ -514,8 +582,69 @@ impl Interpreter {
             }
         }
 
-        fn parse_instructions_to_actions(instructions: Vec<token>) -> (Vec<Action>, FlagMap) {
-            todo!("parse_instructions_to_actions is not implemented yet")
+        fn parse_proc_body(instructions: Vec<token>) -> (Vec<Action>, FlagMap) {
+            todo!("parse_proc_body is not implemented yet")
+        }
+
+        fn parse_struct_body(
+            structs_to_parse_map: &HashMap<name, Vec<token>>,
+            name: token,
+            fields: Vec<token>,
+        ) -> Result<Struct, ParseStructError> {
+            if contains_special_characters(&name.0) {
+                return Err(ParseStructError::StructNameCanNotContainSpecialCharacters(
+                    name,
+                ));
+            }
+
+            if structs_to_parse_map.contains_key(&name.0) {
+                return Err(ParseStructError::DuplicateStructName(name));
+            }
+
+            let mut new_struct = Struct {
+                name: name.0,
+                fields: HashMap::new(),
+            };
+
+            let mut field_type = String::new();
+            for (i, token) in fields.into_iter().enumerate() {
+                if i % 2 == 0 {
+                    //field name
+                    if is_basic_type(&token.0) || structs_to_parse_map.contains_key(&token.0) {
+                        return Err(ParseStructError::FieldNameCanNotBeNameOfType(token));
+                    } else if contains_special_characters(&token.0) {
+                        return Err(
+                            ParseStructError::StructFieldNameCanNotContainSpecialCharacters(token),
+                        );
+                    } else if new_struct.fields.contains_key(&token.0) {
+                        return Err(ParseStructError::DuplicateStructFieldName(token));
+                    }
+                    assert!(!field_type.is_empty());
+                    new_struct.fields.insert(token.0, field_type.clone());
+                    field_type.clear();
+                } else {
+                    //field type
+                    if is_basic_type(&token.0) || structs_to_parse_map.contains_key(&token.0) {
+                        field_type = token.0
+                    } else {
+                        return Err(ParseStructError::TypeDoesNotExist(token));
+                    }
+                }
+            }
+
+            Ok(new_struct)
+        }
+
+        fn is_basic_type(word: &String) -> bool {
+            if word == TYPE_TEXT || word == TYPE_NUMB || word == TYPE_BOOL {
+                true
+            } else {
+                false
+            }
+        }
+
+        fn contains_special_characters(string: &String) -> bool {
+            string.chars().all(char::is_alphanumeric)
         }
     }
 }
@@ -540,4 +669,17 @@ pub enum AbisError {
     //Proc Errors
     DuplicateProcedureName(token),
     ExpectedIsOrInOrOutKW(token),
+
+    //StructErrors
+    ErrorParsingStruct(ParseStructError),
+}
+
+#[derive(Debug, PartialEq)]
+pub enum ParseStructError {
+    StructNameCanNotContainSpecialCharacters(token),
+    DuplicateStructName(token),
+    TypeDoesNotExist(token),
+    FieldNameCanNotBeNameOfType(token),
+    StructFieldNameCanNotContainSpecialCharacters(token),
+    DuplicateStructFieldName(token),
 }

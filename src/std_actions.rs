@@ -77,7 +77,7 @@ fn iff(current_proc: &mut Procedure) {
 
     assert!(current_proc.flag_map.0.contains_key(param2));
 
-    if param1.value.get_normal_value() == "true" {
+    if param1.value.get_normal_bool_value() == true {
         current_proc.next_action_index = current_proc.flag_map.0[param2];
     }
 }
@@ -95,7 +95,7 @@ fn ifn(current_proc: &mut Procedure) {
 
     assert!(current_proc.flag_map.contains_key(param2));
 
-    if param1.value.get_normal_value() == "true" {
+    if param1.value.get_normal_bool_value() == true {
         current_proc.next_action_index = current_proc.flag_map[param2];
     }
 }
