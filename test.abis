@@ -59,9 +59,9 @@ end
 _________________________________________________
 
 
-proc assert in bool expr is "adas asdasd dd a adf asdas das ad sad" 
+proc assert in bool expr is
     ifn expr crash
-    rtn
+    rtn 
     crash: stp
 end
 
