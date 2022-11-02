@@ -26,6 +26,12 @@ pub const TYPE_TEXT: &str = "TEXT";
 pub const TYPE_NUMB: &str = "NUMB";
 pub const TYPE_BOOL: &str = "BOOL";
 
+const TYPE_VAR: &str = "VAR";
+const TYPE_TYPE: &str = "TYPE";
+const TYPE_FLAG: &str = "FLAG";
+const TYPE_PROC: &str = "PROC";
+const TYPE_NEUTRAL: &str = "NEUTRAL";
+
 const DEF_TEXT_VALUE: String = String::new();
 const DEF_NUMB_VALUE: f64 = 0.0;
 const DEF_BOOL_VALUE: bool = false;
@@ -119,6 +125,11 @@ impl Value {
         }
     }
 }
+#[derive(Clone)]
+struct ActionDef {
+    method: fn(&mut Procedure),
+    parameters_types: Vec<&'static str>,
+}
 
 #[derive(Debug, Clone)]
 struct Action {
@@ -144,6 +155,11 @@ impl std::ops::Deref for VariableMap {
     type Target = HashMap<String, Value>;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+impl std::ops::DerefMut for VariableMap {
+    fn deref_mut(&mut self) -> &mut HashMap<String, Value> {
+        &mut self.0
     }
 }
 
@@ -198,7 +214,7 @@ impl std::ops::DerefMut for StructMap {
 pub struct Procedure {
     name: String,
     //                                type    name
-    input_vars_and_types: Option<Vec<(String, String)>>,
+    input_vars_and_types: Option<HashMap<name, typee>>,
     output_type: Option<String>,
     output_value: Option<Value>,
 
@@ -213,7 +229,7 @@ pub struct Procedure {
 impl Procedure {
     fn new(
         name: String,
-        input_vars_and_types: Option<Vec<(String, String)>>,
+        input_vars_and_types: Option<HashMap<name, typee>>,
         output_type: Option<String>,
         action_vec: Vec<Action>,
         flag_map: FlagMap,
@@ -245,8 +261,7 @@ impl Procedure {
     }
 
     fn get_raw_parameters(&self) -> &Vec<String> {
-        let parameters = &self.action_list[self.current_action_index].parameters;
-        parameters
+        &self.action_list[self.current_action_index].parameters
     }
 
     ///Gets the value of the given parameter
@@ -260,28 +275,45 @@ impl Procedure {
     }
 
     fn add_new_variable(&mut self, name: String, typee: String) {
-        assert!(!self.var_map.0.contains_key(&name));
+        assert!(
+            !self.var_map.0.contains_key(&name),
+            "proc already contains a variable with that name."
+        );
         let value = get_default_value_of_type(typee);
-        self.var_map.0.insert(name, value);
+        self.var_map.insert(name, value);
     }
 
     fn add_new_variable_with_value(&mut self, name: String, typee: String, value: Value) {
-        todo!()
+        todo!("add_new_variable_with_value is not implemented yet!")
     }
 
     fn run_proc(&mut self, input_values: Option<Vec<Value>>) -> Option<Value> {
         if input_values.is_some() {
             assert!(self.input_vars_and_types.is_some());
             assert!(
-                self.input_vars_and_types.clone().unwrap().len()
+                self.input_vars_and_types.as_ref().unwrap().len()
                     == input_values.as_ref().unwrap().len()
             );
         }
         match input_values {
-            Some(iv) => iv.iter().enumerate().for_each(|(i, input_value)| {
-                let (typee, name) = &self.input_vars_and_types.clone().unwrap()[i];
-                self.add_new_variable_with_value(name.clone(), typee.clone(), input_value.clone());
-            }),
+            Some(iv) => {
+                for (i, (name, typee)) in self
+                    .input_vars_and_types
+                    .as_ref()
+                    .unwrap()
+                    .clone()
+                    .iter()
+                    .enumerate()
+                {
+                    let input_value = &iv[i];
+                    assert!(input_value.typee == *typee);
+                    self.add_new_variable_with_value(
+                        name.clone(),
+                        typee.clone(),
+                        input_value.clone(),
+                    );
+                }
+            }
             None => {}
         }
 
@@ -307,7 +339,7 @@ type ProceduresMap = HashMap<String, Procedure>;
 type token = (String, usize, usize);
 
 pub struct Interpreter {
-    action_map: HashMap<String, fn(&mut Procedure)>,
+    action_map: HashMap<String, ActionDef>,
     proc_map: ProceduresMap,
     struct_map: StructMap,
     string_literals_list: Vec<String>,
@@ -324,8 +356,9 @@ impl Interpreter {
         }
     }
 
+    /// UNIMPLEMENTED!
     pub fn add_action(&mut self) {
-        todo!("add_action is not implemented yet!")
+        unimplemented!("add_action is not implemented!")
     }
 
     ///Loads the current script reciving it as a string to the interpreter.
@@ -333,19 +366,25 @@ impl Interpreter {
     /// Returns a AbisError if the scrript could not be parsed.
     ///
     /// The String should contain all the text of a .abis file.
-    fn load_script(&mut self, script: String) -> Result<(), AbisError> {
-        let (block_list, struct_list) = Self::parse_script(script)?;
-        todo!("load_script is not implemented yet");
+    pub fn load_script(&mut self, script: String) -> Result<(), AbisError> {
+        let (proc_map, struct_map) = self.parse_script(script)?;
+        self.struct_map = struct_map;
+        self.proc_map = proc_map;
+        Ok(())
     }
 
-    pub fn run_script(&mut self) -> Result<(), AbisError> {
-        todo!("run_script is not implemented yet");
+    pub fn run_scripts(&mut self) -> Result<(), AbisError> {
+        if !self.proc_map.contains_key("main") {
+            return Err(AbisError::MainProcedureNotFound);
+        }
+
+        Ok(())
     }
 
-    fn parse_script(script: String) -> Result<(ProceduresMap, StructMap), AbisError> {
+    fn parse_script(&self, script: String) -> Result<(ProceduresMap, StructMap), AbisError> {
         let tokens: Vec<token> = lexer(script);
 
-        let (struct_map, procedures_map) = parser(tokens)?;
+        let (struct_map, procedures_map) = parser(tokens, &self.action_map)?;
 
         return Ok((procedures_map, struct_map));
 
@@ -398,7 +437,10 @@ impl Interpreter {
             }
         }
 
-        fn parser(tokens: Vec<token>) -> Result<(StructMap, ProceduresMap), AbisError> {
+        fn parser(
+            tokens: Vec<token>,
+            action_map: &HashMap<String, ActionDef>,
+        ) -> Result<(StructMap, ProceduresMap), AbisError> {
             let mut struct_map: StructMap = StructMap::new();
             let mut proc_map: ProceduresMap = HashMap::new();
 
@@ -422,7 +464,7 @@ impl Interpreter {
             //Used to keep track of the current contex
             let mut current_contex = Contex::WaitingProcOrStructKW;
 
-            //TODO: add verification for field types and names can not be action names and have special caracters ("& $ # @ . = + * - / " | ? ( ) [ ] { }").
+            //TODO: add verification for field types and names can not be action names and have special characters ("& $ # @ . = + * - / " | ? ( ) [ ] { }").
 
             const_assert!(KEYWORDS_QUANT == 6);
             for token in tokens {
@@ -501,7 +543,7 @@ impl Interpreter {
 
                             current_struct_name = word.to_string();
 
-                            struct_map_to_parse.insert(current_struct_name.clone(), Vec::new());
+                            struct_map_to_parse.insert(current_struct_name.clone(), vec![token]);
 
                             current_contex = Contex::ExpectingStructIsKW;
                         }
@@ -530,7 +572,7 @@ impl Interpreter {
                             current_proc_name = word.to_string();
 
                             proc_map_to_parse
-                                .insert(current_proc_name.clone(), (Vec::new(), None, None));
+                                .insert(current_proc_name.clone(), (vec![token], None, None));
 
                             current_contex = Contex::ExpectingIsOrInOrOutKW;
                         }
@@ -569,6 +611,27 @@ impl Interpreter {
                 }
             }
 
+            // Parses all the structs
+            for (k, v) in struct_map_to_parse.clone() {
+                let s = parse_struct(&struct_map_to_parse, v);
+                match s {
+                    Ok(x) => {
+                        struct_map.insert(k, x);
+                    }
+                    Err(e) => return Err(AbisError::ErrorParsingStruct(e)),
+                }
+            }
+
+            for (k, (body, input, output)) in proc_map_to_parse.clone() {
+                let s = parse_proc(body, input, output, &struct_map, action_map);
+                match s {
+                    Ok(x) => {
+                        proc_map.insert(k, x);
+                    }
+                    Err(e) => return Err(AbisError::ErrorParsingProcedure(e)),
+                }
+            }
+
             return Ok((struct_map, proc_map));
 
             enum Contex {
@@ -591,15 +654,170 @@ impl Interpreter {
             body: Vec<token>,
             input_vars: Option<Vec<token>>,
             output_type: Option<token>,
-        ) -> (Vec<Action>, FlagMap) {
-            todo!("parse_proc is not implemented yet")
+            structs: &StructMap,
+            action_map: &HashMap<String, ActionDef>,
+        ) -> Result<Procedure, ParseProcError> {
+            assert!(body.len() > 2);
+            let proc_name = body[0].0.clone();
+            let input_vars_and_types: Option<HashMap<name, typee>> = match input_vars {
+                Some(tokens) => {
+                    assert!(tokens.len() % 2 == 0);
+                    let mut map: HashMap<name, typee> = HashMap::new();
+                    let mut i = 0;
+                    while i < tokens.len() {
+                        let typee = tokens[i].0.clone();
+                        let name = tokens[i + 1].0.clone();
+
+                        if is_basic_type(&typee) || structs.contains_key(&typee) {
+                            if map.contains_key(&name) {
+                                return Err(ParseProcError::DuplicateFieldName(tokens[i].clone()));
+                            }
+                            map.insert(name, typee);
+                        } else {
+                            return Err(ParseProcError::FieldTypeNotDefined(tokens[i].clone()));
+                        }
+
+                        i += 2;
+                    }
+                    Some(map)
+                }
+                None => None,
+            };
+
+            let output_type: Option<typee> = if let Some(t) = output_type {
+                if is_basic_type(&t.0) || structs.contains_key(&t.0) {
+                    Some(t.0)
+                } else {
+                    return Err(ParseProcError::OutputTypeNotDefined(t));
+                }
+            } else {
+                None
+            };
+
+            let (action_vec, flag_map) = parse_proc_body(body, structs, action_map)?;
+
+            let new_proc = Procedure::new(
+                proc_name,
+                input_vars_and_types,
+                output_type,
+                action_vec,
+                flag_map,
+            );
+
+            return Ok(new_proc);
+
+            fn parse_proc_body(
+                body: Vec<token>,
+                _map: &StructMap,
+                action_map: &HashMap<String, ActionDef>,
+            ) -> Result<(Vec<Action>, FlagMap), ParseProcError> {
+                let mut action_vec = Vec::new();
+                let mut flag_map: HashMap<String, usize> = HashMap::new();
+
+                let mut current_action_name = String::new();
+                let mut current_action_params = Vec::<String>::new();
+                let mut current_action_param_counter = 0;
+
+                let mut string_param = String::new();
+
+                let mut context: Context = Context::ExpectingActionNameOrFlag;
+
+                let mut action_counter = 0;
+
+                for (_i, token) in body.into_iter().enumerate() {
+                    let word = token.0.clone();
+                    match context {
+                        Context::ExpectingActionNameOrFlag => {
+                            if word.ends_with(':') {
+                                flag_map.insert(word, action_counter);
+                            } else {
+                                if !action_map.contains_key(&word) {
+                                    return Err(ParseProcError::UnknownAction(token));
+                                }
+
+                                current_action_name = word.clone();
+                                current_action_param_counter =
+                                    action_map[&word].parameters_types.len();
+                                context = Context::ReadingActionArgs;
+                            }
+                        }
+                        Context::ReadingActionArgs => {
+                            if action_map.contains_key(&word) {
+                                return Err(ParseProcError::ExpectedParamFoundAction(token));
+                            }
+
+                            if word.starts_with('"') {
+                                string_param.push_str(word.trim_start_matches('"'));
+                                context = Context::ReadingString;
+                            } else {
+                                current_action_params.push(word);
+                                current_action_param_counter -= 1;
+
+                                if current_action_param_counter == 0 {
+                                    action_vec.push(Action::new(
+                                        current_action_name.clone(),
+                                        current_action_params.clone(),
+                                    ));
+
+                                    current_action_name.clear();
+                                    current_action_params.clear();
+
+                                    action_counter += 1;
+
+                                    context = Context::ExpectingActionNameOrFlag;
+                                }
+                            }
+                        }
+                        Context::ReadingString => {
+                            if word.ends_with('"') {
+                                let word = word.trim_end_matches('"');
+                                string_param.push_str(format!(" {}", word).as_str());
+
+                                current_action_params.push(string_param.clone());
+                                current_action_param_counter -= 1;
+
+                                string_param.clear();
+
+                                context = Context::ReadingActionArgs;
+
+                                if current_action_param_counter == 0 {
+                                    action_vec.push(Action::new(
+                                        current_action_name.clone(),
+                                        current_action_params.clone(),
+                                    ));
+
+                                    current_action_name.clear();
+                                    current_action_params.clear();
+
+                                    action_counter += 1;
+
+                                    context = Context::ExpectingActionNameOrFlag;
+                                }
+                            } else {
+                                string_param.push_str(format!(" {}", word).as_str());
+                            }
+                        }
+                    }
+                }
+
+                return Ok((action_vec, FlagMap::new(flag_map)));
+
+                enum Context {
+                    ExpectingActionNameOrFlag,
+                    ReadingActionArgs,
+                    ReadingString,
+                }
+            }
         }
 
         fn parse_struct(
             structs_to_parse_map: &HashMap<name, Vec<token>>,
-            name: token,
             fields: Vec<token>,
         ) -> Result<Struct, ParseStructError> {
+            assert!(fields.len() >= 3);
+            //the first token is the name of the struct
+            let name: token = fields[0].clone();
+
             if contains_special_characters(&name.0) {
                 return Err(ParseStructError::StructNameCanNotContainSpecialCharacters(
                     name,
@@ -617,6 +835,10 @@ impl Interpreter {
 
             let mut field_type = String::new();
             for (i, token) in fields.into_iter().enumerate() {
+                if i == 0 {
+                    //Skips the first one because is the name of the struct
+                    continue;
+                }
                 if i % 2 == 0 {
                     //field name
                     if is_basic_type(&token.0) || structs_to_parse_map.contains_key(&token.0) {
@@ -661,6 +883,7 @@ impl Interpreter {
 
 #[derive(Debug, PartialEq)]
 pub enum AbisError {
+    MainProcedureNotFound,
     TypeNotDefined(token),
     NoLoadedScript(token),
     StringDeclarationWithoutEnding(token),
@@ -698,4 +921,9 @@ pub enum ParseStructError {
 #[derive(Debug, PartialEq)]
 pub enum ParseProcError {
     ProcedureNameCanNotContainSpecialCharacters(token),
+    FieldTypeNotDefined(token),
+    DuplicateFieldName(token),
+    OutputTypeNotDefined(token),
+    UnknownAction(token),
+    ExpectedParamFoundAction(token),
 }

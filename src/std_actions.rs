@@ -1,10 +1,22 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, vec};
 
-use crate::{Procedure, TYPE_BOOL};
+use crate::{
+    ActionDef, Procedure, TYPE_BOOL, TYPE_FLAG, TYPE_NEUTRAL, TYPE_PROC, TYPE_TYPE, TYPE_VAR,
+};
 
 //STANDART ACTIONS DEFINITION
-const ACTIONCOUNT: u8 = 8;
-///Creates
+const ACTIONS: &[&str] = &["var", "giv", "exe", "rtn", "jmp", "iff", "ifn"];
+
+const ACTION_VAR: &str = ACTIONS[0];
+const ACTION_GIV: &str = ACTIONS[1];
+const ACTION_EXE: &str = ACTIONS[2];
+const ACTION_RTN: &str = ACTIONS[3];
+const ACTION_JMP: &str = ACTIONS[4];
+const ACTION_IFF: &str = ACTIONS[5];
+const ACTION_IFN: &str = ACTIONS[6];
+
+const ACTIONCOUNT: usize = ACTIONS.len();
+///Creates a new variable to the procedure
 fn var(current_proc: &mut Procedure) {
     let parameters: &Vec<String> = current_proc.get_raw_parameters();
 
@@ -114,18 +126,63 @@ Actions that could be added:
     ASSERT : bool (same as STP but only stops if its false)
 */
 
-pub(crate) fn hashmap_with_default_actions() -> HashMap<String, fn(&mut Procedure)> {
-    let mut map = HashMap::<String, fn(&mut Procedure)>::new();
+pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
+    let mut map = HashMap::<String, ActionDef>::new();
 
-    map.insert("var".to_string(), var);
-    map.insert("giv".to_string(), giv);
-    map.insert("exe".to_string(), exe);
-    map.insert("rtn".to_string(), rtn);
-    map.insert("jmp".to_string(), jmp);
-    map.insert("iff".to_string(), iff);
-    map.insert("ifn".to_string(), ifn);
+    map.insert(
+        ACTION_VAR.to_string(),
+        ActionDef {
+            method: var,
+            parameters_types: vec![TYPE_TYPE, TYPE_NEUTRAL],
+        },
+    );
+    map.insert(
+        ACTION_GIV.to_string(),
+        ActionDef {
+            method: giv,
+            parameters_types: vec![TYPE_VAR, TYPE_NEUTRAL],
+        },
+    );
+    map.insert(
+        ACTION_EXE.to_string(),
+        ActionDef {
+            method: exe,
+            parameters_types: vec![TYPE_PROC],
+        },
+    );
+    map.insert(
+        ACTION_RTN.to_string(),
+        ActionDef {
+            method: rtn,
+            parameters_types: vec![TYPE_NEUTRAL],
+        },
+    );
+    map.insert(
+        ACTION_JMP.to_string(),
+        ActionDef {
+            method: jmp,
+            parameters_types: vec![TYPE_FLAG],
+        },
+    );
+    map.insert(
+        ACTION_IFF.to_string(),
+        ActionDef {
+            method: iff,
+            parameters_types: vec![TYPE_BOOL, TYPE_FLAG],
+        },
+    );
+    map.insert(
+        ACTION_IFN.to_string(),
+        ActionDef {
+            method: ifn,
+            parameters_types: vec![TYPE_BOOL, TYPE_FLAG],
+        },
+    );
 
-    assert!(map.len() == ACTIONCOUNT as usize);
+    assert!(
+        map.len() == ACTIONCOUNT as usize,
+        "If this fails add the new action here!"
+    );
 
     map
 }
