@@ -1,6 +1,9 @@
 mod std_actions;
 
-use std::collections::{self, HashMap};
+use std::{
+    collections::{self, HashMap},
+    task::Context,
+};
 
 use static_assertions::const_assert;
 use std_actions::hashmap_with_default_actions;
@@ -108,7 +111,7 @@ impl ValueForm {
 #[derive(Debug, Clone)]
 pub struct Value {
     typee: String,
-    value: ValueForm,
+    pub value: ValueForm,
 }
 
 impl Value {
@@ -126,9 +129,17 @@ impl Value {
     }
 }
 #[derive(Clone)]
-struct ActionDef {
+pub struct ActionDef {
     method: fn(&mut Procedure),
     parameters_types: Vec<&'static str>,
+}
+impl ActionDef {
+    pub fn new(method: fn(&mut Procedure), parameters_types: Vec<&'static str>) -> Self {
+        ActionDef {
+            method,
+            parameters_types,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -356,9 +367,9 @@ impl Interpreter {
         }
     }
 
-    /// UNIMPLEMENTED!
-    pub fn add_action(&mut self) {
-        unimplemented!("add_action is not implemented!")
+    /// Adds a new action to the interpreter
+    pub fn add_action(&mut self, action_name: &str, definition: ActionDef) {
+        self.action_map.insert(action_name.to_string(), definition);
     }
 
     ///Loads the current script reciving it as a string to the interpreter.
@@ -373,10 +384,13 @@ impl Interpreter {
         Ok(())
     }
 
+    //Runs the current loaded script.
     pub fn run_scripts(&mut self) -> Result<(), AbisError> {
         if !self.proc_map.contains_key("main") {
             return Err(AbisError::MainProcedureNotFound);
         }
+
+        let _ = &self.proc_map.get_mut("main").unwrap().run_proc(None);
 
         Ok(())
     }
@@ -462,7 +476,7 @@ impl Interpreter {
             let mut current_proc_name: String = String::new();
 
             //Used to keep track of the current contex
-            let mut current_contex = Contex::WaitingProcOrStructKW;
+            let mut current_contex = MainParserContex::WaitingProcOrStructKW;
 
             //TODO: add verification for field types and names can not be action names and have special characters ("& $ # @ . = + * - / " | ? ( ) [ ] { }").
 
@@ -471,65 +485,98 @@ impl Interpreter {
                 let word = token.0.as_str();
                 match word {
                     KW_STRUCT => match current_contex {
-                        Contex::WaitingProcOrStructKW => {
-                            current_contex = Contex::ExpectingStructName;
+                        MainParserContex::WaitingProcOrStructKW => {
+                            current_contex = MainParserContex::ExpectingStructName;
                         }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                        _ => {
+                            return Err(AbisError::InvalidKeyWordInCurrentContext(
+                                token,
+                                current_contex.into(),
+                            ))
+                        }
                     },
                     KW_END => match current_contex {
-                        Contex::ReadingStructBody => {
+                        MainParserContex::ReadingStructBody => {
                             current_struct_name = String::new();
-                            current_contex = Contex::WaitingProcOrStructKW;
+                            current_contex = MainParserContex::WaitingProcOrStructKW;
                         }
 
-                        Contex::ReadingProcedureBody => {
+                        MainParserContex::ReadingProcedureBody => {
                             current_proc_name = String::new();
 
-                            current_contex = Contex::WaitingProcOrStructKW;
+                            current_contex = MainParserContex::WaitingProcOrStructKW;
                         }
 
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                        _ => {
+                            return Err(AbisError::InvalidKeyWordInCurrentContext(
+                                token,
+                                current_contex,
+                            ))
+                        }
                     },
                     KW_PROC => match current_contex {
-                        Contex::WaitingProcOrStructKW => {
-                            current_contex = Contex::ExpectingProcName;
+                        MainParserContex::WaitingProcOrStructKW => {
+                            current_contex = MainParserContex::ExpectingProcName;
                         }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                        _ => {
+                            return Err(AbisError::InvalidKeyWordInCurrentContext(
+                                token,
+                                current_contex,
+                            ))
+                        }
                     },
 
                     KW_IN => match current_contex {
-                        Contex::ExpectingIsOrInOrOutKW => {
+                        MainParserContex::ExpectingIsOrInOrOutKW => {
                             proc_map_to_parse.get_mut(&current_proc_name).unwrap().1 =
                                 Some(Vec::new());
 
-                            current_contex = Contex::ReadingProcedureInputFields;
+                            current_contex = MainParserContex::ReadingProcedureInputFields;
                         }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                        _ => {
+                            return Err(AbisError::InvalidKeyWordInCurrentContext(
+                                token,
+                                current_contex,
+                            ))
+                        }
                     },
 
                     KW_OUT => match current_contex {
-                        Contex::ReadingProcedureInputFields | Contex::ExpectingIsOrInOrOutKW => {
-                            current_contex = Contex::ExpectingOutputType;
+                        MainParserContex::ReadingProcedureInputFields
+                        | MainParserContex::ExpectingIsOrInOrOutKW => {
+                            current_contex = MainParserContex::ExpectingOutputType;
                         }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                        _ => {
+                            return Err(AbisError::InvalidKeyWordInCurrentContext(
+                                token,
+                                current_contex,
+                            ))
+                        }
                     },
 
                     KW_IS => match current_contex {
-                        Contex::ExpectingProcIsKW | Contex::ReadingProcedureInputFields => {
-                            current_contex = Contex::ReadingProcedureBody;
+                        MainParserContex::ExpectingProcIsKW
+                        | MainParserContex::ExpectingIsOrInOrOutKW
+                        | MainParserContex::ReadingProcedureInputFields => {
+                            current_contex = MainParserContex::ReadingProcedureBody;
                         }
-                        Contex::ExpectingStructIsKW => {
-                            current_contex = Contex::ReadingStructBody;
+                        MainParserContex::ExpectingStructIsKW => {
+                            current_contex = MainParserContex::ReadingStructBody;
                         }
-                        _ => return Err(AbisError::InvalidKeyWordInCurrentContext(token)),
+                        _ => {
+                            return Err(AbisError::InvalidKeyWordInCurrentContext(
+                                token,
+                                current_contex,
+                            ))
+                        }
                     },
 
                     _ => match current_contex {
-                        Contex::WaitingProcOrStructKW => {
+                        MainParserContex::WaitingProcOrStructKW => {
                             return Err(AbisError::ExpectedStructOrProcKWs(token));
                         }
 
-                        Contex::ExpectingStructName => {
+                        MainParserContex::ExpectingStructName => {
                             if struct_map_to_parse.contains_key(&word.to_string()) {
                                 return Err(AbisError::DuplicateStructName(token));
                             }
@@ -545,10 +592,10 @@ impl Interpreter {
 
                             struct_map_to_parse.insert(current_struct_name.clone(), vec![token]);
 
-                            current_contex = Contex::ExpectingStructIsKW;
+                            current_contex = MainParserContex::ExpectingStructIsKW;
                         }
 
-                        Contex::ReadingStructBody => {
+                        MainParserContex::ReadingStructBody => {
                             assert!(struct_map_to_parse.contains_key(&current_struct_name));
                             (*struct_map_to_parse.get_mut(&current_struct_name).unwrap())
                                 .push(token);
@@ -557,7 +604,7 @@ impl Interpreter {
                         }
 
                         //Procedures parsing--------------------------------------------------
-                        Contex::ExpectingProcName => {
+                        MainParserContex::ExpectingProcName => {
                             if proc_map_to_parse.contains_key(&word.to_string()) {
                                 return Err(AbisError::DuplicateProcedureName(token));
                             }
@@ -574,19 +621,20 @@ impl Interpreter {
                             proc_map_to_parse
                                 .insert(current_proc_name.clone(), (vec![token], None, None));
 
-                            current_contex = Contex::ExpectingIsOrInOrOutKW;
+                            current_contex = MainParserContex::ExpectingIsOrInOrOutKW;
                         }
 
                         //Contex::WaitingProcKW => continue,
-                        Contex::ExpectingIsOrInOrOutKW => {
+                        MainParserContex::ExpectingIsOrInOrOutKW => {
                             return Err(AbisError::ExpectedIsOrInOrOutKW(token));
                         }
 
-                        Contex::ExpectingProcIsKW | Contex::ExpectingStructIsKW => {
+                        MainParserContex::ExpectingProcIsKW
+                        | MainParserContex::ExpectingStructIsKW => {
                             return Err(AbisError::ExpectingIsKeyWord(token));
                         }
 
-                        Contex::ReadingProcedureInputFields => {
+                        MainParserContex::ReadingProcedureInputFields => {
                             //This is "almost" equal to proc_map_to_parse[&current_proc_name].1.push(token);
                             proc_map_to_parse
                                 .get_mut(&current_proc_name)
@@ -596,11 +644,11 @@ impl Interpreter {
                                 .unwrap()
                                 .push(token);
                         }
-                        Contex::ExpectingOutputType => {
+                        MainParserContex::ExpectingOutputType => {
                             proc_map_to_parse.get_mut(&current_proc_name).unwrap().2 = Some(token);
-                            current_contex = Contex::ExpectingProcIsKW;
+                            current_contex = MainParserContex::ExpectingProcIsKW;
                         }
-                        Contex::ReadingProcedureBody => {
+                        MainParserContex::ReadingProcedureBody => {
                             proc_map_to_parse
                                 .get_mut(&current_proc_name)
                                 .unwrap()
@@ -633,21 +681,6 @@ impl Interpreter {
             }
 
             return Ok((struct_map, proc_map));
-
-            enum Contex {
-                WaitingProcOrStructKW,
-                ExpectingProcName,
-                ExpectingIsOrInOrOutKW,
-                ExpectingProcIsKW,
-                ReadingProcedureInputFields,
-                ExpectingOutputType,
-                ReadingProcedureBody,
-                //For Structs
-                ExpectingStructName,
-                ExpectingStructIsKW,
-                //----------
-                ReadingStructBody,
-            }
         }
 
         fn parse_proc(
@@ -711,14 +744,16 @@ impl Interpreter {
                 _map: &StructMap,
                 action_map: &HashMap<String, ActionDef>,
             ) -> Result<(Vec<Action>, FlagMap), ParseProcError> {
+                //removes first token because is the name of the procedure.
+                let mut body = body;
+                body.remove(0);
+
                 let mut action_vec = Vec::new();
                 let mut flag_map: HashMap<String, usize> = HashMap::new();
 
                 let mut current_action_name = String::new();
                 let mut current_action_params = Vec::<String>::new();
                 let mut current_action_param_counter = 0;
-
-                let mut string_param = String::new();
 
                 let mut context: Context = Context::ExpectingActionNameOrFlag;
 
@@ -745,56 +780,21 @@ impl Interpreter {
                             if action_map.contains_key(&word) {
                                 return Err(ParseProcError::ExpectedParamFoundAction(token));
                             }
+                            current_action_params.push(word);
+                            current_action_param_counter -= 1;
 
-                            if word.starts_with('"') {
-                                string_param.push_str(word.trim_start_matches('"'));
-                                context = Context::ReadingString;
-                            } else {
-                                current_action_params.push(word);
-                                current_action_param_counter -= 1;
+                            if current_action_param_counter == 0 {
+                                action_vec.push(Action::new(
+                                    current_action_name.clone(),
+                                    current_action_params.clone(),
+                                ));
 
-                                if current_action_param_counter == 0 {
-                                    action_vec.push(Action::new(
-                                        current_action_name.clone(),
-                                        current_action_params.clone(),
-                                    ));
+                                current_action_name.clear();
+                                current_action_params.clear();
 
-                                    current_action_name.clear();
-                                    current_action_params.clear();
+                                action_counter += 1;
 
-                                    action_counter += 1;
-
-                                    context = Context::ExpectingActionNameOrFlag;
-                                }
-                            }
-                        }
-                        Context::ReadingString => {
-                            if word.ends_with('"') {
-                                let word = word.trim_end_matches('"');
-                                string_param.push_str(format!(" {}", word).as_str());
-
-                                current_action_params.push(string_param.clone());
-                                current_action_param_counter -= 1;
-
-                                string_param.clear();
-
-                                context = Context::ReadingActionArgs;
-
-                                if current_action_param_counter == 0 {
-                                    action_vec.push(Action::new(
-                                        current_action_name.clone(),
-                                        current_action_params.clone(),
-                                    ));
-
-                                    current_action_name.clear();
-                                    current_action_params.clear();
-
-                                    action_counter += 1;
-
-                                    context = Context::ExpectingActionNameOrFlag;
-                                }
-                            } else {
-                                string_param.push_str(format!(" {}", word).as_str());
+                                context = Context::ExpectingActionNameOrFlag;
                             }
                         }
                     }
@@ -805,7 +805,6 @@ impl Interpreter {
                 enum Context {
                     ExpectingActionNameOrFlag,
                     ReadingActionArgs,
-                    ReadingString,
                 }
             }
         }
@@ -876,9 +875,25 @@ impl Interpreter {
         }
 
         fn contains_special_characters(string: &str) -> bool {
-            string.chars().all(char::is_alphanumeric)
+            !string.chars().all(char::is_alphanumeric)
         }
     }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum MainParserContex {
+    WaitingProcOrStructKW,
+    ExpectingProcName,
+    ExpectingIsOrInOrOutKW,
+    ExpectingProcIsKW,
+    ReadingProcedureInputFields,
+    ExpectingOutputType,
+    ReadingProcedureBody,
+    //For Structs
+    ExpectingStructName,
+    ExpectingStructIsKW,
+    //----------
+    ReadingStructBody,
 }
 
 #[derive(Debug, PartialEq)]
@@ -889,7 +904,7 @@ pub enum AbisError {
     StringDeclarationWithoutEnding(token),
     InvalidBlockStructure(token),
     InvalidScript(token),
-    InvalidKeyWordInCurrentContext(token),
+    InvalidKeyWordInCurrentContext(token, MainParserContex),
     DuplicateStructName(token),
     StructDefinitionEndedWithoutFields(token),
     DuplicateFieldName(token),
