@@ -1,3 +1,3 @@
 fn error_checker() -> Result<(), AbisError> {
-    unimplemented!();
+    unimplemented!("the error checker is not implemented.");
 }

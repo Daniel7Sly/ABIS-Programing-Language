@@ -1,5 +1,6 @@
 mod std_actions;
 
+use core::num;
 use std::{
     collections::{self, HashMap},
     task::Context,
@@ -275,9 +276,28 @@ impl Procedure {
         &self.action_list[self.current_action_index].parameters
     }
 
-    ///Gets the value of the given parameter
+    ///Gets the value of the given parameter. A parameter can be a string, number, boolean, variable
     fn get_value(&self, param: &String, param_index: usize) -> Value {
-        todo!("get_value is not implemented yet")
+        if param.starts_with("$") {
+            let var_name = param.trim_start_matches('$').to_string();
+            assert!(self.var_map.contains_key(&var_name));
+
+            self.var_map[&var_name].clone()
+        } else if param.starts_with('\"') {
+            let mut value = Value::new(TYPE_TEXT);
+            value.value = ValueForm::NormalText(param.trim_matches('\"').to_string());
+            value
+        } else if let Some(boolean) = param.parse::<bool>().ok() {
+            let mut value = Value::new(TYPE_BOOL);
+            value.value = ValueForm::NormalBool(boolean);
+            value
+        } else if let Some(number) = param.parse::<f64>().ok() {
+            let mut value = Value::new(TYPE_NUMB);
+            value.value = ValueForm::NormalNumb(number);
+            value
+        } else {
+            unreachable!("param was not of the expecting values. It must be some error in the error_checker.rs.")
+        }
     }
 
     ///Returns a mutable reference of the value of the variable found by the param
@@ -298,7 +318,11 @@ impl Procedure {
         todo!("add_new_variable_with_value is not implemented yet!")
     }
 
-    fn run_proc(&mut self, input_values: Option<Vec<Value>>) -> Option<Value> {
+    fn run_proc(
+        &mut self,
+        input_values: Option<Vec<Value>>,
+        actions_def: &HashMap<String, ActionDef>,
+    ) -> Option<Value> {
         if input_values.is_some() {
             assert!(self.input_vars_and_types.is_some());
             assert!(
@@ -306,6 +330,7 @@ impl Procedure {
                     == input_values.as_ref().unwrap().len()
             );
         }
+        //Creates the variables with the input values
         match input_values {
             Some(iv) => {
                 for (i, (name, typee)) in self
@@ -329,11 +354,16 @@ impl Procedure {
         }
 
         //Run procedure
-        let mut i: usize = 0;
+        let mut i = 0;
         while i < self.action_list.len() {
+            //println!("index = {}", i);
+            self.current_action_index = i;
+            self.next_action_index = i + 1;
             let action = self.action_list[i].clone();
-            todo!("run_proc is not implemnted yet");
-            i += 1;
+            // Runs the action
+            (actions_def[&action.name].method)(self);
+
+            i = self.next_action_index;
         }
 
         return None;
@@ -390,7 +420,11 @@ impl Interpreter {
             return Err(AbisError::MainProcedureNotFound);
         }
 
-        let _ = &self.proc_map.get_mut("main").unwrap().run_proc(None);
+        let _ = &self
+            .proc_map
+            .get_mut("main")
+            .unwrap()
+            .run_proc(None, &self.action_map);
 
         Ok(())
     }
@@ -420,7 +454,7 @@ impl Interpreter {
                 let mut string_literal = String::new();
 
                 for (col, word) in words {
-                    if word.starts_with("\"") {
+                    if word.starts_with("\"") && !word.ends_with('\"') {
                         reading_string_literal = true;
                         string_literal.push_str(word);
                     } else if reading_string_literal {

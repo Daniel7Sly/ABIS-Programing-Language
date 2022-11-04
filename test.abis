@@ -1,3 +1,6 @@
 proc main is
     println "Hello World!"
+    var text a
+    giv a "var and giv working!!!"
+    println $a
 end
