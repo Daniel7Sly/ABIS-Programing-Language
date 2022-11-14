@@ -30,12 +30,18 @@ pub const TYPE_TEXT: &str = "TEXT";
 pub const TYPE_NUMB: &str = "NUMB";
 pub const TYPE_BOOL: &str = "BOOL";
 
+// Param types
 const TYPE_VAR: &str = "VAR";
 const TYPE_TYPE: &str = "TYPE";
 const TYPE_FLAG: &str = "FLAG";
 const TYPE_PROC: &str = "PROC";
 const TYPE_NEUTRAL: &str = "NEUTRAL";
 
+const TYPE_VAR_TEXT: &str = "VAR_TEXT";
+const TYPE_VAR_NUMB: &str = "VAR_NUMB";
+const TYPE_VAR_BOOL: &str = "VAR_BOOL";
+
+// Defualt Values
 const DEF_TEXT_VALUE: String = String::new();
 const DEF_NUMB_VALUE: f64 = 0.0;
 const DEF_BOOL_VALUE: bool = false;
@@ -117,15 +123,15 @@ pub struct Value {
 
 impl Value {
     fn new(typee: &str) -> Self {
-        let value: ValueForm = match typee {
+        let value_form: ValueForm = match typee.to_uppercase().as_str() {
             TYPE_TEXT => ValueForm::NormalText(DEF_TEXT_VALUE),
             TYPE_NUMB => ValueForm::NormalNumb(DEF_NUMB_VALUE),
             TYPE_BOOL => ValueForm::NormalBool(DEF_BOOL_VALUE),
-            _ => todo!("creation of new values of structs/arrays are not implemented yet!"),
+            _ => todo!("creation of new values of structs/arrays, are not implemented yet!"),
         };
         Value {
-            typee: typee.to_string(),
-            value: value,
+            typee: typee.to_uppercase().to_string(),
+            value: value_form,
         }
     }
 }
@@ -268,16 +274,19 @@ impl Procedure {
         //Gets the value of each parameter
         parameters
             .iter()
-            .for_each(|param| param_values.push(self.get_value(param, self.current_action_index)));
+            .for_each(|param| param_values.push(self.get_value(param)));
         return param_values;
     }
 
-    fn get_raw_parameters(&self) -> &Vec<String> {
-        &self.action_list[self.current_action_index].parameters
+    /// Returns a clone of the raw parameters
+    fn get_raw_parameters(&self) -> Vec<String> {
+        self.action_list[self.current_action_index]
+            .parameters
+            .clone()
     }
 
     ///Gets the value of the given parameter. A parameter can be a string, number, boolean, variable
-    fn get_value(&self, param: &String, param_index: usize) -> Value {
+    fn get_value(&self, param: &String) -> Value {
         if param.starts_with("$") {
             let var_name = param.trim_start_matches('$').to_string();
             assert!(self.var_map.contains_key(&var_name));
@@ -301,8 +310,16 @@ impl Procedure {
     }
 
     ///Returns a mutable reference of the value of the variable found by the param
-    fn get_variable_value_mutref<'a>(&self, param: &String, param_index: usize) -> &'a mut Value {
-        todo!("get_variable is not implemented yet")
+    fn get_variable_value_mutref<'a>(&'a mut self, param: &String) -> &'a mut Value {
+        assert!(param.starts_with('$'));
+
+        let k = param.trim_matches('$');
+
+        assert!(self.var_map.contains_key(k));
+
+        let val_ref = self.var_map.get_mut(k).unwrap();
+
+        val_ref
     }
 
     fn add_new_variable(&mut self, name: String, typee: String) {
@@ -371,7 +388,7 @@ impl Procedure {
 }
 
 fn get_default_value_of_type(typee: String) -> Value {
-    todo!("get_default_value_of_type is not implemented yet");
+    Value::new(typee.as_str())
 }
 
 type ProceduresMap = HashMap<String, Procedure>;
@@ -798,7 +815,8 @@ impl Interpreter {
                     match context {
                         Context::ExpectingActionNameOrFlag => {
                             if word.ends_with(':') {
-                                flag_map.insert(word, action_counter);
+                                let flag = word.trim_end_matches(':').to_string();
+                                flag_map.insert(flag, action_counter);
                             } else {
                                 if !action_map.contains_key(&word) {
                                     return Err(ParseProcError::UnknownAction(token));

@@ -23,7 +23,15 @@ fn println(current_proc: &mut Procedure) {
 
     assert!(parameters.len() == 1);
 
-    let text = parameters[0].value.get_normal_text_value();
-
-    println!("{}", text);
+    let value = &parameters[0].value;
+    if value.is_normal_text() {
+        let text = parameters[0].value.get_normal_text_value();
+        println!("{}", text);
+    } else if value.is_normal_numb() {
+        let text = parameters[0].value.get_normal_numb_value();
+        println!("{}", text);
+    } else if value.is_normal_bool() {
+        let text = parameters[0].value.get_normal_bool_value();
+        println!("{}", text);
+    }
 }
