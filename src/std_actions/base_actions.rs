@@ -1,5 +1,7 @@
+use crate::{Procedure, TYPE_BOOL};
+
 ///Creates a new variable to the procedure
-fn var(current_proc: &mut Procedure) {
+pub(crate) fn var(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -10,7 +12,7 @@ fn var(current_proc: &mut Procedure) {
     current_proc.add_new_variable(name, typee);
 }
 
-fn giv(current_proc: &mut Procedure) {
+pub(crate) fn giv(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -28,7 +30,7 @@ fn giv(current_proc: &mut Procedure) {
     *param1 = param2;
 }
 
-fn exe(current_proc: &mut Procedure) {
+pub(crate) fn exe(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 1);
@@ -38,7 +40,7 @@ fn exe(current_proc: &mut Procedure) {
     current_proc.get_value(&parameters[0]);
 }
 
-fn rtn(current_proc: &mut Procedure) {
+pub(crate) fn rtn(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 1);
@@ -51,7 +53,7 @@ fn rtn(current_proc: &mut Procedure) {
     current_proc.output_value = Some(output_value);
 }
 
-fn jmp(current_proc: &mut Procedure) {
+pub(crate) fn jmp(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 1);
@@ -65,7 +67,7 @@ fn jmp(current_proc: &mut Procedure) {
     current_proc.next_action_index = current_proc.flag_map.0[param];
 }
 
-fn iff(current_proc: &mut Procedure) {
+pub(crate) fn iff(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -83,7 +85,7 @@ fn iff(current_proc: &mut Procedure) {
     }
 }
 
-fn ifn(current_proc: &mut Procedure) {
+pub(crate) fn ifn(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);

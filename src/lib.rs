@@ -1,4 +1,4 @@
-mod actions;
+mod std_actions;
 
 use core::num;
 use std::{
@@ -6,8 +6,8 @@ use std::{
     task::Context,
 };
 
-use actions::std_actions::hashmap_with_default_actions;
 use static_assertions::const_assert;
+use std_actions::hashmap_with_default_actions;
 
 // use crate::std_actions::ACTIONCOUNT;
 

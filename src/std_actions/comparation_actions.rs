@@ -1,6 +1,8 @@
+use crate::{Procedure, ValueForm, TYPE_BOOL, TYPE_NUMB};
+
 //Comparation and logic
 
-fn bgt(current_proc: &mut Procedure) {
+pub(crate) fn bgt(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -21,7 +23,7 @@ fn bgt(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalBool(rslt);
 }
 
-fn smt(current_proc: &mut Procedure) {
+pub(crate) fn smt(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -42,7 +44,7 @@ fn smt(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalBool(rslt);
 }
 
-fn eql(current_proc: &mut Procedure) {
+pub(crate) fn eql(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -63,7 +65,7 @@ fn eql(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalBool(rslt);
 }
 
-fn dif(current_proc: &mut Procedure) {
+pub(crate) fn dif(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -84,7 +86,7 @@ fn dif(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalBool(rslt);
 }
 
-fn and(current_proc: &mut Procedure) {
+pub(crate) fn and(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -105,7 +107,7 @@ fn and(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalBool(rslt);
 }
 
-fn orr(current_proc: &mut Procedure) {
+pub(crate) fn orr(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);

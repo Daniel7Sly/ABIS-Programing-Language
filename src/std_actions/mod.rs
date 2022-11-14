@@ -1,8 +1,13 @@
+mod arithmetic_actions;
+mod base_actions;
+mod comparation_actions;
+mod parse_actions;
+
 use std::{collections::HashMap, vec};
 
 use crate::{
-    ActionDef, Procedure, ValueForm, TYPE_BOOL, TYPE_FLAG, TYPE_NEUTRAL, TYPE_NUMB, TYPE_PROC,
-    TYPE_TEXT, TYPE_TYPE, TYPE_VAR, TYPE_VAR_BOOL, TYPE_VAR_NUMB, TYPE_VAR_TEXT,
+    ActionDef, TYPE_BOOL, TYPE_FLAG, TYPE_NEUTRAL, TYPE_NUMB, TYPE_PROC, TYPE_TEXT, TYPE_TYPE,
+    TYPE_VAR, TYPE_VAR_BOOL, TYPE_VAR_NUMB, TYPE_VAR_TEXT,
 };
 
 //STANDART ACTIONS DEFINITION
@@ -54,7 +59,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_VAR.to_string(),
         ActionDef {
-            method: var,
+            method: base_actions::var,
             parameters_types: vec![TYPE_TYPE, TYPE_NEUTRAL],
         },
     );
@@ -62,7 +67,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_GIV.to_string(),
         ActionDef {
-            method: giv,
+            method: base_actions::giv,
             parameters_types: vec![TYPE_VAR, TYPE_NEUTRAL],
         },
     );
@@ -70,35 +75,35 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_EXE.to_string(),
         ActionDef {
-            method: exe,
+            method: base_actions::exe,
             parameters_types: vec![TYPE_PROC],
         },
     );
     map.insert(
         ACTION_RTN.to_string(),
         ActionDef {
-            method: rtn,
+            method: base_actions::rtn,
             parameters_types: vec![TYPE_NEUTRAL],
         },
     );
     map.insert(
         ACTION_JMP.to_string(),
         ActionDef {
-            method: jmp,
+            method: base_actions::jmp,
             parameters_types: vec![TYPE_FLAG],
         },
     );
     map.insert(
         ACTION_IFF.to_string(),
         ActionDef {
-            method: iff,
+            method: base_actions::iff,
             parameters_types: vec![TYPE_BOOL, TYPE_FLAG],
         },
     );
     map.insert(
         ACTION_IFN.to_string(),
         ActionDef {
-            method: ifn,
+            method: base_actions::ifn,
             parameters_types: vec![TYPE_BOOL, TYPE_FLAG],
         },
     );
@@ -107,16 +112,24 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_PRS.to_string(),
         ActionDef {
-            method: prs,
+            method: parse_actions::prs,
             parameters_types: vec![TYPE_VAR_NUMB, TYPE_TEXT, TYPE_VAR_BOOL],
         },
     );
 
+    //TXT
+    map.insert(
+        ACTION_TXT.to_string(),
+        ActionDef {
+            method: parse_actions::txt,
+            parameters_types: vec![TYPE_VAR_TEXT, TYPE_NEUTRAL],
+        },
+    );
     // ADD
     map.insert(
         ACTION_ADD.to_string(),
         ActionDef {
-            method: add,
+            method: arithmetic_actions::add,
             parameters_types: vec![TYPE_VAR_NUMB, TYPE_NUMB],
         },
     );
@@ -125,7 +138,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_SUB.to_string(),
         ActionDef {
-            method: sub,
+            method: arithmetic_actions::sub,
             parameters_types: vec![TYPE_VAR_NUMB, TYPE_NUMB],
         },
     );
@@ -134,7 +147,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_MUL.to_string(),
         ActionDef {
-            method: mul,
+            method: arithmetic_actions::mul,
             parameters_types: vec![TYPE_VAR_NUMB, TYPE_NUMB],
         },
     );
@@ -143,7 +156,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_DIV.to_string(),
         ActionDef {
-            method: div,
+            method: arithmetic_actions::div,
             parameters_types: vec![TYPE_VAR_NUMB, TYPE_NUMB],
         },
     );
@@ -152,17 +165,8 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_MOD.to_string(),
         ActionDef {
-            method: mod_,
+            method: arithmetic_actions::mod_,
             parameters_types: vec![TYPE_VAR_NUMB, TYPE_NUMB],
-        },
-    );
-
-    //TXT
-    map.insert(
-        ACTION_TXT.to_string(),
-        ActionDef {
-            method: txt,
-            parameters_types: vec![TYPE_VAR_TEXT, TYPE_NEUTRAL],
         },
     );
 
@@ -170,7 +174,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_BGT.to_string(),
         ActionDef {
-            method: bgt,
+            method: comparation_actions::bgt,
             parameters_types: vec![TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB],
         },
     );
@@ -179,7 +183,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_SMT.to_string(),
         ActionDef {
-            method: smt,
+            method: comparation_actions::smt,
             parameters_types: vec![TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB],
         },
     );
@@ -188,7 +192,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_EQL.to_string(),
         ActionDef {
-            method: eql,
+            method: comparation_actions::eql,
             parameters_types: vec![TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB],
         },
     );
@@ -197,7 +201,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_DIF.to_string(),
         ActionDef {
-            method: dif,
+            method: comparation_actions::dif,
             parameters_types: vec![TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB],
         },
     );
@@ -206,7 +210,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_AND.to_string(),
         ActionDef {
-            method: and,
+            method: comparation_actions::and,
             parameters_types: vec![TYPE_VAR_BOOL, TYPE_BOOL, TYPE_BOOL],
         },
     );
@@ -215,7 +219,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     map.insert(
         ACTION_ORR.to_string(),
         ActionDef {
-            method: orr,
+            method: comparation_actions::orr,
             parameters_types: vec![TYPE_VAR_BOOL, TYPE_BOOL, TYPE_BOOL],
         },
     );

@@ -1,6 +1,8 @@
+use crate::{Procedure, ValueForm, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT};
+
 // PARSE
 
-fn prs(current_proc: &mut Procedure) {
+pub(crate) fn prs(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -27,7 +29,7 @@ fn prs(current_proc: &mut Procedure) {
     }
 }
 
-fn txt(current_proc: &mut Procedure) {
+pub(crate) fn txt(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -39,11 +41,11 @@ fn txt(current_proc: &mut Procedure) {
 
     let text: String;
     match param2.value {
-        ValueForm::Struct(v) => text = stringify!(v).to_string(),
+        ValueForm::Struct(_v) => text = stringify!(v).to_string(),
         ValueForm::NormalText(v) => text = v,
         ValueForm::NormalNumb(v) => text = v.to_string(),
         ValueForm::NormalBool(v) => text = v.to_string(),
-        ValueForm::Array(v) => text = stringify!(v).to_string(),
+        ValueForm::Array(_v) => text = stringify!(v).to_string(),
     }
 
     param1.value = ValueForm::NormalText(text);

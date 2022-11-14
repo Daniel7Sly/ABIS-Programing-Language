@@ -1,6 +1,8 @@
+use crate::{Procedure, ValueForm, TYPE_NUMB};
+
 // Arithmetic
 
-fn add(current_proc: &mut Procedure) {
+pub(crate) fn add(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -19,7 +21,7 @@ fn add(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalNumb(rslt);
 }
 
-fn sub(current_proc: &mut Procedure) {
+pub(crate) fn sub(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -38,7 +40,7 @@ fn sub(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalNumb(rslt);
 }
 
-fn mul(current_proc: &mut Procedure) {
+pub(crate) fn mul(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -57,7 +59,7 @@ fn mul(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalNumb(rslt);
 }
 
-fn div(current_proc: &mut Procedure) {
+pub(crate) fn div(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -76,7 +78,7 @@ fn div(current_proc: &mut Procedure) {
     param1.value = ValueForm::NormalNumb(rslt);
 }
 
-fn mod_(current_proc: &mut Procedure) {
+pub(crate) fn mod_(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
