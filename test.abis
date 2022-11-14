@@ -10,3 +10,6 @@ end
 < smt
 = eql
 ! dif
+
+& and
+| orr
