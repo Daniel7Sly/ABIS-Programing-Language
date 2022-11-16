@@ -2,6 +2,11 @@ use crate::{Procedure, ValueForm, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT};
 
 // PARSE
 
+/// This action parses text into a number.
+/// The 3rd param is a boolean representing if the parsing
+/// was done sucssedfully or not.
+///
+/// PRS $numb text $bool
 pub(crate) fn prs(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
@@ -29,6 +34,9 @@ pub(crate) fn prs(current_proc: &mut Procedure) {
     }
 }
 
+/// Parses any given value into text.
+///
+/// TXT $text anything
 pub(crate) fn txt(current_proc: &mut Procedure) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 

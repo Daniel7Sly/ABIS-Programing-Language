@@ -52,6 +52,7 @@ const ACTIONCOUNT: usize = ACTIONS.len();
         ASSERT : bool (same as STP but only stops if its false)
 */
 
+/// Inserts each action definition function into a map
 pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     let mut map = HashMap::<String, ActionDef>::new();
 
