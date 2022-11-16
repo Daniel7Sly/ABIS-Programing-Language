@@ -1,13 +1,44 @@
-pub(crate) fn parse_script(&self, script: String) -> Result<(ProceduresMap, StructMap), AbisError> {
-    let tokens: Vec<token> = lexer(script);
+pub(crate) mod lexer;
 
-    let (struct_map, procedures_map) = parser(tokens, &self.action_map)?;
+use std::collections::HashMap;
+
+use crate::parser::lexer::{lexer, Token};
+
+use crate::{
+    AbisError, Action, ActionDef, FlagMap, ParseProcError, ParseStructError, Procedure,
+    ProceduresMap, Struct, StructMap, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT,
+};
+
+// KEYWORDS:
+const KEYWORDS: &[&str] = &["proc", "struct", "is", "in", "out", "end" /*"const"*/];
+const KW_PROC: &str = KEYWORDS[0];
+const KW_STRUCT: &str = KEYWORDS[1];
+const KW_IS: &str = KEYWORDS[2];
+const KW_IN: &str = KEYWORDS[3];
+const KW_OUT: &str = KEYWORDS[4];
+const KW_END: &str = KEYWORDS[5];
+// const KW_CONST: &str = KEYWORDS[6];
+
+// if new keyword is added this will
+// trigger some errors to account for the new keyword
+pub(crate) const KEYWORDS_QUANT: usize = KEYWORDS.len();
+
+type Name = String;
+type Type = String;
+
+pub(crate) fn parse_script(
+    script: String,
+    action_map: &HashMap<String, ActionDef>,
+) -> Result<(ProceduresMap, StructMap), AbisError> {
+    let tokens: Vec<Token> = lexer(script);
+
+    let (struct_map, procedures_map) = parser(tokens, action_map)?;
 
     return Ok((procedures_map, struct_map));
 }
 
 fn parser(
-    tokens: Vec<token>,
+    tokens: Vec<Token>,
     action_map: &HashMap<String, ActionDef>,
 ) -> Result<(StructMap, ProceduresMap), AbisError> {
     let mut struct_map: StructMap = StructMap::new();
@@ -15,7 +46,7 @@ fn parser(
 
     // Struct parsing variables
     //Contains the struct that have to be parsed, contains the body of the struct.
-    let mut struct_map_to_parse: HashMap<name, Vec<token>> = HashMap::new();
+    let mut struct_map_to_parse: HashMap<Name, Vec<Token>> = HashMap::new();
     //Used to know what struct we are reading the body.
     let mut current_struct_name: String = String::new();
 
@@ -23,9 +54,9 @@ fn parser(
     // Contains the procedures that have to be parsed, contains the input fields
     // the output type and the body of the of the procedure.
     let mut proc_map_to_parse: HashMap<
-        name,
+        Name,
         // (body, input, output)
-        (Vec<token>, Option<Vec<token>>, Option<token>),
+        (Vec<Token>, Option<Vec<Token>>, Option<Token>),
     > = HashMap::new();
     //Used to know what procedure we are reading the body.
     let mut current_proc_name: String = String::new();
@@ -35,9 +66,10 @@ fn parser(
 
     //TODO: add verification for field types and names can not be action names and have special characters ("& $ # @ . = + * - / " | ? ( ) [ ] { }").
 
-    const_assert!(KEYWORDS_QUANT == 6);
+    assert!(KEYWORDS_QUANT == 6);
+
     for token in tokens {
-        let word = token.0.as_str();
+        let word = token.word.as_str();
         match word {
             KW_STRUCT => match current_contex {
                 MainParserContex::WaitingProcOrStructKW => {
@@ -231,14 +263,14 @@ fn parser(
 }
 
 fn parse_struct(
-    structs_to_parse_map: &HashMap<name, Vec<token>>,
-    fields: Vec<token>,
+    structs_to_parse_map: &HashMap<Name, Vec<Token>>,
+    fields: Vec<Token>,
 ) -> Result<Struct, ParseStructError> {
     assert!(fields.len() >= 3);
     //the first token is the name of the struct
-    let name: token = fields[0].clone();
+    let name: Token = fields[0].clone();
 
-    if contains_special_characters(&name.0) {
+    if contains_special_characters(&name.word) {
         return Err(ParseStructError::StructNameCanNotContainSpecialCharacters(
             name,
         ));
@@ -249,7 +281,7 @@ fn parse_struct(
     // }
 
     let mut new_struct = Struct {
-        name: name.0,
+        name: name.word,
         fields: HashMap::new(),
     };
 
@@ -261,21 +293,21 @@ fn parse_struct(
         }
         if i % 2 == 0 {
             //field name
-            if is_basic_type(&token.0) || structs_to_parse_map.contains_key(&token.0) {
+            if is_basic_type(&token.word) || structs_to_parse_map.contains_key(&token.word) {
                 return Err(ParseStructError::FieldNameCanNotBeNameOfType(token));
-            } else if contains_special_characters(&token.0) {
+            } else if contains_special_characters(&token.word) {
                 return Err(ParseStructError::StructFieldNameCanNotContainSpecialCharacters(token));
-            } else if new_struct.fields.contains_key(&token.0) {
+            } else if new_struct.fields.contains_key(&token.word) {
                 return Err(ParseStructError::DuplicateStructFieldName(token));
             }
             assert!(!field_type.is_empty());
-            new_struct.fields.insert(token.0, field_type.clone());
+            new_struct.fields.insert(token.word, field_type.clone());
             field_type.clear();
         } else {
             //field type
             //TODO: check for recursive definition in structs like: struct aaa is bbb b end struct bbb is aaa a end
-            if is_basic_type(&token.0) || structs_to_parse_map.contains_key(&token.0) {
-                field_type = token.0
+            if is_basic_type(&token.word) || structs_to_parse_map.contains_key(&token.word) {
+                field_type = token.word
             } else {
                 return Err(ParseStructError::TypeDoesNotExist(token));
             }
@@ -286,22 +318,22 @@ fn parse_struct(
 }
 
 fn parse_proc(
-    body: Vec<token>,
-    input_vars: Option<Vec<token>>,
-    output_type: Option<token>,
+    body: Vec<Token>,
+    input_vars: Option<Vec<Token>>,
+    output_type: Option<Token>,
     structs: &StructMap,
     action_map: &HashMap<String, ActionDef>,
 ) -> Result<Procedure, ParseProcError> {
     assert!(body.len() > 2);
-    let proc_name = body[0].0.clone();
-    let input_vars_and_types: Option<HashMap<name, typee>> = match input_vars {
+    let proc_name = body[0].word.clone();
+    let input_vars_and_types: Option<HashMap<Name, Type>> = match input_vars {
         Some(tokens) => {
             assert!(tokens.len() % 2 == 0);
-            let mut map: HashMap<name, typee> = HashMap::new();
+            let mut map: HashMap<Name, Type> = HashMap::new();
             let mut i = 0;
             while i < tokens.len() {
-                let typee = tokens[i].0.clone();
-                let name = tokens[i + 1].0.clone();
+                let typee = tokens[i].word.clone();
+                let name = tokens[i + 1].word.clone();
 
                 if is_basic_type(&typee) || structs.contains_key(&typee) {
                     if map.contains_key(&name) {
@@ -319,9 +351,9 @@ fn parse_proc(
         None => None,
     };
 
-    let output_type: Option<typee> = if let Some(t) = output_type {
-        if is_basic_type(&t.0) || structs.contains_key(&t.0) {
-            Some(t.0)
+    let output_type: Option<Type> = if let Some(t) = output_type {
+        if is_basic_type(&t.word) || structs.contains_key(&t.word) {
+            Some(t.word)
         } else {
             return Err(ParseProcError::OutputTypeNotDefined(t));
         }
@@ -340,75 +372,91 @@ fn parse_proc(
     );
 
     return Ok(new_proc);
+}
 
-    fn parse_proc_body(
-        body: Vec<token>,
-        _map: &StructMap,
-        action_map: &HashMap<String, ActionDef>,
-    ) -> Result<(Vec<Action>, FlagMap), ParseProcError> {
-        //removes first token because is the name of the procedure.
-        let mut body = body;
-        body.remove(0);
+fn parse_proc_body(
+    body: Vec<Token>,
+    _map: &StructMap,
+    action_map: &HashMap<String, ActionDef>,
+) -> Result<(Vec<Action>, FlagMap), ParseProcError> {
+    //removes first token because is the name of the procedure.
+    let mut body = body;
+    body.remove(0);
 
-        let mut action_vec = Vec::new();
-        let mut flag_map: HashMap<String, usize> = HashMap::new();
+    let mut action_vec = Vec::new();
+    let mut flag_map: HashMap<String, usize> = HashMap::new();
 
-        let mut current_action_name = String::new();
-        let mut current_action_params = Vec::<String>::new();
-        let mut current_action_param_counter = 0;
+    let mut current_action_name = String::new();
+    let mut current_action_params = Vec::<String>::new();
+    let mut current_action_param_counter = 0;
 
-        let mut context: Context = Context::ExpectingActionNameOrFlag;
+    let mut context: Context = Context::ExpectingActionNameOrFlag;
 
-        let mut action_counter = 0;
+    let mut action_counter = 0;
 
-        for (_i, token) in body.into_iter().enumerate() {
-            let word = token.0.clone();
-            match context {
-                Context::ExpectingActionNameOrFlag => {
-                    if word.ends_with(':') {
-                        let flag = word.trim_end_matches(':').to_string();
-                        flag_map.insert(flag, action_counter);
-                    } else {
-                        if !action_map.contains_key(&word) {
-                            return Err(ParseProcError::UnknownAction(token));
-                        }
-
-                        current_action_name = word.clone();
-                        current_action_param_counter = action_map[&word].parameters_types.len();
-                        context = Context::ReadingActionArgs;
+    for (_i, token) in body.into_iter().enumerate() {
+        let word = token.word.clone();
+        match context {
+            Context::ExpectingActionNameOrFlag => {
+                if word.ends_with(':') {
+                    let flag = word.trim_end_matches(':').to_string();
+                    flag_map.insert(flag, action_counter);
+                } else {
+                    if !action_map.contains_key(&word) {
+                        return Err(ParseProcError::UnknownAction(token));
                     }
+
+                    current_action_name = word.clone();
+                    current_action_param_counter = action_map[&word].parameters_types.len();
+                    context = Context::ReadingActionArgs;
                 }
-                Context::ReadingActionArgs => {
-                    if action_map.contains_key(&word) {
-                        return Err(ParseProcError::ExpectedParamFoundAction(token));
-                    }
-                    current_action_params.push(word);
-                    current_action_param_counter -= 1;
+            }
+            Context::ReadingActionArgs => {
+                if action_map.contains_key(&word) {
+                    return Err(ParseProcError::ExpectedParamFoundAction(token));
+                }
+                current_action_params.push(word);
+                current_action_param_counter -= 1;
 
-                    if current_action_param_counter == 0 {
-                        action_vec.push(Action::new(
-                            current_action_name.clone(),
-                            current_action_params.clone(),
-                        ));
+                if current_action_param_counter == 0 {
+                    action_vec.push(Action::new(
+                        current_action_name.clone(),
+                        current_action_params.clone(),
+                    ));
 
-                        current_action_name.clear();
-                        current_action_params.clear();
+                    current_action_name.clear();
+                    current_action_params.clear();
 
-                        action_counter += 1;
+                    action_counter += 1;
 
-                        context = Context::ExpectingActionNameOrFlag;
-                    }
+                    context = Context::ExpectingActionNameOrFlag;
                 }
             }
         }
-
-        return Ok((action_vec, FlagMap::new(flag_map)));
-
-        enum Context {
-            ExpectingActionNameOrFlag,
-            ReadingActionArgs,
-        }
     }
+
+    return Ok((action_vec, FlagMap::new(flag_map)));
+
+    enum Context {
+        ExpectingActionNameOrFlag,
+        ReadingActionArgs,
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum MainParserContex {
+    WaitingProcOrStructKW,
+    ExpectingProcName,
+    ExpectingIsOrInOrOutKW,
+    ExpectingProcIsKW,
+    ReadingProcedureInputFields,
+    ExpectingOutputType,
+    ReadingProcedureBody,
+    //For Structs
+    ExpectingStructName,
+    ExpectingStructIsKW,
+    //----------
+    ReadingStructBody,
 }
 
 fn contains_special_characters(string: &str) -> bool {

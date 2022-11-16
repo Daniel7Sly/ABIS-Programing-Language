@@ -1,29 +1,13 @@
+mod parser;
 mod std_actions;
 
-use core::num;
-use std::{
-    collections::{self, HashMap},
-    task::Context,
-};
+use std::collections::HashMap;
 
-use static_assertions::const_assert;
-use std_actions::hashmap_with_default_actions;
+use parser::{parse_script, MainParserContex};
+
+use crate::parser::lexer::Token;
 
 // use crate::std_actions::ACTIONCOUNT;
-
-// KEYWORDS:
-const KEYWORDS: &[&str] = &["proc", "struct", "is", "in", "out", "end" /*"const"*/];
-const KW_PROC: &str = KEYWORDS[0];
-const KW_STRUCT: &str = KEYWORDS[1];
-const KW_IS: &str = KEYWORDS[2];
-const KW_IN: &str = KEYWORDS[3];
-const KW_OUT: &str = KEYWORDS[4];
-const KW_END: &str = KEYWORDS[5];
-// const KW_CONST: &str = KEYWORDS[6];
-
-// if new keyword is added this will
-// trigger some errors to account for the new keyword
-const KEYWORDS_QUANT: usize = KEYWORDS.len();
 
 // basic types
 pub const TYPE_TEXT: &str = "TEXT";
@@ -393,9 +377,6 @@ fn get_default_value_of_type(typee: String) -> Value {
 
 type ProceduresMap = HashMap<String, Procedure>;
 
-// word row col
-type token = (String, usize, usize);
-
 pub struct Interpreter {
     action_map: HashMap<String, ActionDef>,
     proc_map: ProceduresMap,
@@ -425,7 +406,7 @@ impl Interpreter {
     ///
     /// The String should contain all the text of a .abis file.
     pub fn load_script(&mut self, script: String) -> Result<(), AbisError> {
-        let (proc_map, struct_map) = self.parse_script(script)?;
+        let (proc_map, struct_map) = parse_script(script, &self.action_map)?;
         self.struct_map = struct_map;
         self.proc_map = proc_map;
         Ok(())
@@ -448,42 +429,26 @@ impl Interpreter {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum MainParserContex {
-    WaitingProcOrStructKW,
-    ExpectingProcName,
-    ExpectingIsOrInOrOutKW,
-    ExpectingProcIsKW,
-    ReadingProcedureInputFields,
-    ExpectingOutputType,
-    ReadingProcedureBody,
-    //For Structs
-    ExpectingStructName,
-    ExpectingStructIsKW,
-    //----------
-    ReadingStructBody,
-}
-
-#[derive(Debug, PartialEq)]
 pub enum AbisError {
     MainProcedureNotFound,
-    TypeNotDefined(token),
-    NoLoadedScript(token),
-    StringDeclarationWithoutEnding(token),
-    InvalidBlockStructure(token),
-    InvalidScript(token),
-    InvalidKeyWordInCurrentContext(token, MainParserContex),
-    DuplicateStructName(token),
-    StructDefinitionEndedWithoutFields(token),
-    DuplicateFieldName(token),
-    ExpectingIsKeyWord(token),
-    StructDefinitionEndedIncompletly(token),
-    NameOfStructFieldCanNotHaveNameOfAType(token),
+    TypeNotDefined(Token),
+    NoLoadedScript(Token),
+    StringDeclarationWithoutEnding(Token),
+    InvalidBlockStructure(Token),
+    InvalidScript(Token),
+    InvalidKeyWordInCurrentContext(Token, MainParserContex),
+    DuplicateStructName(Token),
+    StructDefinitionEndedWithoutFields(Token),
+    DuplicateFieldName(Token),
+    ExpectingIsKeyWord(Token),
+    StructDefinitionEndedIncompletly(Token),
+    NameOfStructFieldCanNotHaveNameOfAType(Token),
 
-    ExpectedStructOrProcKWs(token),
+    ExpectedStructOrProcKWs(Token),
 
     //Proc Errors
-    DuplicateProcedureName(token),
-    ExpectedIsOrInOrOutKW(token),
+    DuplicateProcedureName(Token),
+    ExpectedIsOrInOrOutKW(Token),
     ErrorParsingProcedure(ParseProcError),
 
     //StructErrors
@@ -492,20 +457,20 @@ pub enum AbisError {
 
 #[derive(Debug, PartialEq)]
 pub enum ParseStructError {
-    StructNameCanNotContainSpecialCharacters(token),
-    DuplicateStructName(token),
-    TypeDoesNotExist(token),
-    FieldNameCanNotBeNameOfType(token),
-    StructFieldNameCanNotContainSpecialCharacters(token),
-    DuplicateStructFieldName(token),
+    StructNameCanNotContainSpecialCharacters(Token),
+    DuplicateStructName(Token),
+    TypeDoesNotExist(Token),
+    FieldNameCanNotBeNameOfType(Token),
+    StructFieldNameCanNotContainSpecialCharacters(Token),
+    DuplicateStructFieldName(Token),
 }
 
 #[derive(Debug, PartialEq)]
 pub enum ParseProcError {
-    ProcedureNameCanNotContainSpecialCharacters(token),
-    FieldTypeNotDefined(token),
-    DuplicateFieldName(token),
-    OutputTypeNotDefined(token),
-    UnknownAction(token),
-    ExpectedParamFoundAction(token),
+    ProcedureNameCanNotContainSpecialCharacters(Token),
+    FieldTypeNotDefined(Token),
+    DuplicateFieldName(Token),
+    OutputTypeNotDefined(Token),
+    UnknownAction(Token),
+    ExpectedParamFoundAction(Token),
 }
