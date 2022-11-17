@@ -13,7 +13,7 @@ use crate::{
 //STANDART ACTIONS DEFINITION
 const ACTIONS: &[&str] = &[
     "var", "giv", "exe", "rtn", "jmp", "iff", "ifn", "prs", "add", "sub", "mul", "div", "mod",
-    "txt", "bgt", "smt", "eql", "dif", "and", "orr",
+    "txt", "bgt", "smt", "eql", "dif", "and", "orr", "rnd",
 ];
 
 const ACTION_VAR: &str = ACTIONS[0];
@@ -36,6 +36,7 @@ const ACTION_EQL: &str = ACTIONS[16];
 const ACTION_DIF: &str = ACTIONS[17];
 const ACTION_AND: &str = ACTIONS[18];
 const ACTION_ORR: &str = ACTIONS[19];
+const ACTION_RND: &str = ACTIONS[20];
 
 const ACTIONCOUNT: usize = ACTIONS.len();
 
@@ -222,6 +223,15 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
         ActionDef {
             method: comparation_actions::orr,
             parameters_types: vec![TYPE_VAR_BOOL, TYPE_BOOL, TYPE_BOOL],
+        },
+    );
+
+    // Random
+    map.insert(
+        ACTION_RND.to_string(),
+        ActionDef {
+            method: base_actions::rnd,
+            parameters_types: vec![TYPE_VAR_NUMB],
         },
     );
 

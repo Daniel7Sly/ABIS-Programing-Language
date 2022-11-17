@@ -10,9 +10,9 @@ use crate::parser::lexer::Token;
 // use crate::std_actions::ACTIONCOUNT;
 
 // basic types
-pub const TYPE_TEXT: &str = "TEXT";
-pub const TYPE_NUMB: &str = "NUMB";
-pub const TYPE_BOOL: &str = "BOOL";
+pub const TYPE_TEXT: &str = "text";
+pub const TYPE_NUMB: &str = "numb";
+pub const TYPE_BOOL: &str = "bool";
 
 // Param types
 const TYPE_VAR: &str = "VAR";
@@ -107,14 +107,14 @@ pub struct Value {
 
 impl Value {
     fn new(typee: &str) -> Self {
-        let value_form: ValueForm = match typee.to_uppercase().as_str() {
+        let value_form: ValueForm = match typee {
             TYPE_TEXT => ValueForm::NormalText(DEF_TEXT_VALUE),
             TYPE_NUMB => ValueForm::NormalNumb(DEF_NUMB_VALUE),
             TYPE_BOOL => ValueForm::NormalBool(DEF_BOOL_VALUE),
             _ => todo!("creation of new values of structs/arrays, are not implemented yet!"),
         };
         Value {
-            typee: typee.to_uppercase().to_string(),
+            typee: typee.to_string(),
             value: value_form,
         }
     }

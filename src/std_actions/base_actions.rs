@@ -1,4 +1,9 @@
-use crate::{Procedure, TYPE_BOOL};
+use std::{
+    sync::atomic::AtomicU64,
+    time::{SystemTime, UNIX_EPOCH},
+};
+
+use crate::{Procedure, ValueForm, TYPE_BOOL, TYPE_NUMB};
 
 ///Creates a new variable to the procedure
 pub(crate) fn var(current_proc: &mut Procedure) {
@@ -101,4 +106,34 @@ pub(crate) fn ifn(current_proc: &mut Procedure) {
     if param1.value.get_normal_bool_value() == true {
         current_proc.next_action_index = current_proc.flag_map[param2];
     }
+}
+
+static RND_CALL_COUNT: AtomicU64 = AtomicU64::new(7777777);
+pub(crate) fn rnd(current_proc: &mut Procedure) {
+    let parameters: Vec<String> = current_proc.get_raw_parameters();
+
+    assert!(parameters.len() == 1);
+
+    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
+
+    assert!(param1.typee == TYPE_NUMB);
+
+    // https://en.wikipedia.org/wiki/Linear_congruential_generator
+    let mut seed = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .expect("time went backwards")
+        .as_millis() as u64
+        + RND_CALL_COUNT.load(std::sync::atomic::Ordering::SeqCst);
+
+    RND_CALL_COUNT.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
+    const RAND_A: u64 = 6364136223846793005;
+    const RAND_C: u64 = 1442695040888963407;
+
+    seed = seed.overflowing_mul(RAND_A).0;
+    seed = seed.overflowing_add(RAND_C).0;
+
+    let rnd_number = seed >> 32;
+
+    param1.value = ValueForm::NormalNumb(rnd_number as f64);
 }
