@@ -33,92 +33,119 @@ const DEF_BOOL_VALUE: bool = false;
 //static mut action_map: HashMap<String, fn(&mut Procedure)> = HashMap::new();
 
 #[derive(Debug, Clone)]
-pub enum ValueForm {
-    Struct(HashMap<String, Value>),
-    NormalText(String),
-    NormalNumb(f64),
-    NormalBool(bool),
-    Array(Vec<Value>),
+pub enum Value {
+    Numb(f64),
+    Bool(bool),
+    Text(String),
+    Array(Type, Vec<Value>),
+    Struct(Type, HashMap<String, Value>),
 }
-impl ValueForm {
+impl Value {
+    pub fn new(typee: &str) -> Self {
+        let value: Value = match typee {
+            TYPE_TEXT => Value::Text(DEF_TEXT_VALUE),
+            TYPE_NUMB => Value::Numb(DEF_NUMB_VALUE),
+            TYPE_BOOL => Value::Bool(DEF_BOOL_VALUE),
+            _ => {
+                if typee.starts_with('#') {
+                    let typee = typee.trim_matches('#').to_string();
+                    Value::Array(typee, Vec::new())
+                } else {
+                    todo!("creation of values of structs is not implemented yet!");
+                }
+            }
+        };
+        value
+    }
+    ///Returns the type of the value.
+    pub fn typee(&self) -> &str {
+        match self {
+            Value::Text(_) => TYPE_TEXT,
+            Value::Numb(_) => TYPE_NUMB,
+            Value::Bool(_) => TYPE_BOOL,
+            Value::Array(t, _) => t,
+            Value::Struct(t, _) => t,
+        }
+    }
     ///Returns a clone of the string value contained. It panics if the value is not NormalText
     pub fn get_normal_text_value(&self) -> String {
         match self {
-            ValueForm::NormalText(x) => x.clone(),
+            Value::Text(x) => x.clone(),
             _ => panic!("atempted to get NormalText valueForm without being NormalText"),
         }
     }
     ///Returns a clone of the f64 value contained. It panics if the value is not NormalNumb
     pub fn get_normal_numb_value(&self) -> f64 {
         match self {
-            ValueForm::NormalNumb(x) => x.clone(),
+            Value::Numb(x) => x.clone(),
             _ => panic!("atempted to get NormalNumb valueForm without being NormalNumb"),
         }
     }
     ///Returns a clone of the bool value contained. It panics if the value is not NormalBool
     pub fn get_normal_bool_value(&self) -> bool {
         match self {
-            ValueForm::NormalBool(x) => x.clone(),
+            Value::Bool(x) => x.clone(),
             _ => panic!("atempted to get NormalBool valueForm without being NormalBool"),
         }
     }
 
     pub fn is_normal_text(&self) -> bool {
         match self {
-            ValueForm::NormalText(_) => true,
+            Value::Text(_) => true,
             _ => false,
         }
     }
 
     pub fn is_normal_numb(&self) -> bool {
         match self {
-            ValueForm::NormalNumb(_) => true,
+            Value::Numb(_) => true,
             _ => false,
         }
     }
 
     pub fn is_normal_bool(&self) -> bool {
         match self {
-            ValueForm::NormalBool(_) => true,
+            Value::Bool(_) => true,
             _ => false,
         }
     }
 
     pub fn is_array(&self) -> bool {
         match self {
-            ValueForm::Array(_) => true,
+            Value::Array(_, _) => true,
             _ => false,
         }
     }
 
     pub fn is_struct(&self) -> bool {
         match self {
-            ValueForm::Struct(_) => true,
+            Value::Struct(_, _) => true,
             _ => false,
         }
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Value {
-    typee: String,
-    pub value: ValueForm,
-}
+// #[derive(Debug, Clone)]
+// pub struct Value {
+//     typee: String,
+//     pub value: ValueForm,
+// }
 
-impl Value {
-    fn new(typee: &str) -> Self {
-        let value_form: ValueForm = match typee {
-            TYPE_TEXT => ValueForm::NormalText(DEF_TEXT_VALUE),
-            TYPE_NUMB => ValueForm::NormalNumb(DEF_NUMB_VALUE),
-            TYPE_BOOL => ValueForm::NormalBool(DEF_BOOL_VALUE),
-            _ => todo!("creation of new values of structs/arrays, are not implemented yet!"),
-        };
-        Value {
-            typee: typee.to_string(),
-            value: value_form,
-        }
-    }
-}
+// impl Value {
+//     fn new(typee: &str) -> Self {
+//         let value_form: ValueForm = match typee {
+//             TYPE_TEXT => ValueForm::NormalText(DEF_TEXT_VALUE),
+//             TYPE_NUMB => ValueForm::NormalNumb(DEF_NUMB_VALUE),
+//             TYPE_BOOL => ValueForm::NormalBool(DEF_BOOL_VALUE),
+//             _ => todo!("creation of new values of structs/arrays, are not implemented yet!"),
+//         };
+//         Value {
+//             typee: typee.to_string(),
+//             value: value_form,
+//         }
+//     }
+// }
+
 #[derive(Clone)]
 pub struct ActionDef {
     method: fn(&mut Procedure),
@@ -181,18 +208,18 @@ impl std::ops::Deref for FlagMap {
     }
 }
 
-type name = String;
-type typee = String;
-type fields = HashMap<name, typee>;
+type Name = String;
+type Type = String;
+type Fields = HashMap<Name, Type>;
 
 #[derive(Debug, Clone)]
 struct Struct {
     name: String,
-    fields: fields,
+    fields: Fields,
 }
 
 #[derive(Debug, Clone)]
-struct StructMap(HashMap<name, Struct>);
+struct StructMap(HashMap<Name, Struct>);
 impl StructMap {
     fn new() -> Self {
         StructMap(HashMap::new())
@@ -201,13 +228,13 @@ impl StructMap {
 //This makes that you can access the map
 // directly without the need of the ".0"
 impl std::ops::Deref for StructMap {
-    type Target = HashMap<name, Struct>;
+    type Target = HashMap<Name, Struct>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 impl std::ops::DerefMut for StructMap {
-    fn deref_mut(&mut self) -> &mut HashMap<name, Struct> {
+    fn deref_mut(&mut self) -> &mut HashMap<Name, Struct> {
         &mut self.0
     }
 }
@@ -216,7 +243,7 @@ impl std::ops::DerefMut for StructMap {
 pub struct Procedure {
     name: String,
     //                                type    name
-    input_vars_and_types: Option<HashMap<name, typee>>,
+    input_vars_and_types: Option<HashMap<Name, Type>>,
     output_type: Option<String>,
     output_value: Option<Value>,
 
@@ -231,7 +258,7 @@ pub struct Procedure {
 impl Procedure {
     fn new(
         name: String,
-        input_vars_and_types: Option<HashMap<name, typee>>,
+        input_vars_and_types: Option<HashMap<Name, Type>>,
         output_type: Option<String>,
         action_vec: Vec<Action>,
         flag_map: FlagMap,
@@ -276,18 +303,14 @@ impl Procedure {
             assert!(self.var_map.contains_key(&var_name));
 
             self.var_map[&var_name].clone()
+        } else if param.starts_with('@') {
+            todo!("procedure executing is not implemented yet!");
         } else if param.starts_with('\"') {
-            let mut value = Value::new(TYPE_TEXT);
-            value.value = ValueForm::NormalText(param.trim_matches('\"').to_string());
-            value
+            Value::Text(param.trim_matches('\"').to_string())
         } else if let Some(boolean) = param.parse::<bool>().ok() {
-            let mut value = Value::new(TYPE_BOOL);
-            value.value = ValueForm::NormalBool(boolean);
-            value
+            Value::Bool(boolean)
         } else if let Some(number) = param.parse::<f64>().ok() {
-            let mut value = Value::new(TYPE_NUMB);
-            value.value = ValueForm::NormalNumb(number);
-            value
+            Value::Numb(number)
         } else {
             unreachable!("param was not of the expecting values. It must be some error in the error_checker.rs.")
         }
@@ -307,16 +330,15 @@ impl Procedure {
     }
 
     fn add_new_variable(&mut self, name: String, typee: String) {
-        assert!(
-            !self.var_map.0.contains_key(&name),
-            "proc already contains a variable with that name."
-        );
-        let value = get_default_value_of_type(typee);
+        assert!(!self.var_map.0.contains_key(&name),);
+        let value = Value::new(&typee);
         self.var_map.insert(name, value);
     }
 
     fn add_new_variable_with_value(&mut self, name: String, typee: String, value: Value) {
-        todo!("add_new_variable_with_value is not implemented yet!")
+        assert!(!self.var_map.0.contains_key(&name),);
+        assert!(value.typee() == typee);
+        self.var_map.insert(name, value);
     }
 
     fn run_proc(
@@ -343,7 +365,7 @@ impl Procedure {
                     .enumerate()
                 {
                     let input_value = &iv[i];
-                    assert!(input_value.typee == *typee);
+                    //assert!(input_value.typee == *typee);
                     self.add_new_variable_with_value(
                         name.clone(),
                         typee.clone(),
@@ -371,17 +393,13 @@ impl Procedure {
     }
 }
 
-fn get_default_value_of_type(typee: String) -> Value {
-    Value::new(typee.as_str())
-}
-
 type ProceduresMap = HashMap<String, Procedure>;
 
 pub struct Interpreter {
     action_map: HashMap<String, ActionDef>,
     proc_map: ProceduresMap,
     struct_map: StructMap,
-    string_literals_list: Vec<String>,
+    //string_literals_list: Vec<String>,
     block_call_stack: Vec<Procedure>,
 }
 impl Interpreter {
@@ -390,7 +408,7 @@ impl Interpreter {
             action_map: std_actions::hashmap_with_default_actions(),
             proc_map: HashMap::new(),
             struct_map: StructMap::new(),
-            string_literals_list: Vec::new(),
+            //string_literals_list: Vec::new(),
             block_call_stack: Vec::new(),
         }
     }

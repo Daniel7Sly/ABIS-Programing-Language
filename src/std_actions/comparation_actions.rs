@@ -1,4 +1,4 @@
-use crate::{Procedure, ValueForm, TYPE_BOOL, TYPE_NUMB};
+use crate::{Procedure, Value, TYPE_BOOL, TYPE_NUMB};
 
 //Comparation and logic
 
@@ -11,16 +11,16 @@ pub(crate) fn bgt(current_proc: &mut Procedure) {
     let param3 = current_proc.get_value(&parameters[2]);
     let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
 
-    assert!(param1.typee == TYPE_BOOL && param1.value.is_normal_bool());
-    assert!(param2.typee == TYPE_NUMB && param2.value.is_normal_numb());
-    assert!(param3.typee == TYPE_NUMB && param3.value.is_normal_numb());
+    assert!(param1.typee() == TYPE_BOOL && param1.is_normal_bool());
+    assert!(param2.typee() == TYPE_NUMB && param2.is_normal_numb());
+    assert!(param3.typee() == TYPE_NUMB && param3.is_normal_numb());
 
-    let numb1 = param2.value.get_normal_numb_value();
-    let numb2 = param3.value.get_normal_numb_value();
+    let numb1 = param2.get_normal_numb_value();
+    let numb2 = param3.get_normal_numb_value();
 
     let rslt = numb1 > numb2;
 
-    param1.value = ValueForm::NormalBool(rslt);
+    *param1 = Value::Bool(rslt);
 }
 
 pub(crate) fn smt(current_proc: &mut Procedure) {
@@ -32,16 +32,16 @@ pub(crate) fn smt(current_proc: &mut Procedure) {
     let param3 = current_proc.get_value(&parameters[2]);
     let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
 
-    assert!(param1.typee == TYPE_BOOL && param1.value.is_normal_bool());
-    assert!(param2.typee == TYPE_NUMB && param2.value.is_normal_numb());
-    assert!(param3.typee == TYPE_NUMB && param3.value.is_normal_numb());
+    assert!(param1.typee() == TYPE_BOOL && param1.is_normal_bool());
+    assert!(param2.typee() == TYPE_NUMB && param2.is_normal_numb());
+    assert!(param3.typee() == TYPE_NUMB && param3.is_normal_numb());
 
-    let numb1 = param2.value.get_normal_numb_value();
-    let numb2 = param3.value.get_normal_numb_value();
+    let numb1 = param2.get_normal_numb_value();
+    let numb2 = param3.get_normal_numb_value();
 
     let rslt = numb1 < numb2;
 
-    param1.value = ValueForm::NormalBool(rslt);
+    *param1 = Value::Bool(rslt);
 }
 
 pub(crate) fn eql(current_proc: &mut Procedure) {
@@ -53,16 +53,16 @@ pub(crate) fn eql(current_proc: &mut Procedure) {
     let param3 = current_proc.get_value(&parameters[2]);
     let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
 
-    assert!(param1.typee == TYPE_BOOL && param1.value.is_normal_bool());
-    assert!(param2.typee == TYPE_NUMB && param2.value.is_normal_numb());
-    assert!(param3.typee == TYPE_NUMB && param3.value.is_normal_numb());
+    assert!(param1.typee() == TYPE_BOOL && param1.is_normal_bool());
+    assert!(param2.typee() == TYPE_NUMB && param2.is_normal_numb());
+    assert!(param3.typee() == TYPE_NUMB && param3.is_normal_numb());
 
-    let numb1 = param2.value.get_normal_numb_value();
-    let numb2 = param3.value.get_normal_numb_value();
+    let numb1 = param2.get_normal_numb_value();
+    let numb2 = param3.get_normal_numb_value();
 
     let rslt = numb1 == numb2;
 
-    param1.value = ValueForm::NormalBool(rslt);
+    *param1 = Value::Bool(rslt);
 }
 
 pub(crate) fn dif(current_proc: &mut Procedure) {
@@ -74,16 +74,16 @@ pub(crate) fn dif(current_proc: &mut Procedure) {
     let param3 = current_proc.get_value(&parameters[2]);
     let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
 
-    assert!(param1.typee == TYPE_BOOL && param1.value.is_normal_bool());
-    assert!(param2.typee == TYPE_NUMB && param2.value.is_normal_numb());
-    assert!(param3.typee == TYPE_NUMB && param3.value.is_normal_numb());
+    assert!(param1.typee() == TYPE_BOOL && param1.is_normal_bool());
+    assert!(param2.typee() == TYPE_NUMB && param2.is_normal_numb());
+    assert!(param3.typee() == TYPE_NUMB && param3.is_normal_numb());
 
-    let numb1 = param2.value.get_normal_numb_value();
-    let numb2 = param3.value.get_normal_numb_value();
+    let numb1 = param2.get_normal_numb_value();
+    let numb2 = param3.get_normal_numb_value();
 
     let rslt = numb1 != numb2;
 
-    param1.value = ValueForm::NormalBool(rslt);
+    *param1 = Value::Bool(rslt);
 }
 
 pub(crate) fn and(current_proc: &mut Procedure) {
@@ -95,16 +95,16 @@ pub(crate) fn and(current_proc: &mut Procedure) {
     let param3 = current_proc.get_value(&parameters[2]);
     let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
 
-    assert!(param1.typee == TYPE_BOOL && param1.value.is_normal_bool());
-    assert!(param2.typee == TYPE_BOOL && param2.value.is_normal_bool());
-    assert!(param3.typee == TYPE_BOOL && param3.value.is_normal_bool());
+    assert!(param1.typee() == TYPE_BOOL && param1.is_normal_bool());
+    assert!(param2.typee() == TYPE_BOOL && param2.is_normal_bool());
+    assert!(param3.typee() == TYPE_BOOL && param3.is_normal_bool());
 
-    let numb1 = param2.value.get_normal_bool_value();
-    let numb2 = param3.value.get_normal_bool_value();
+    let numb1 = param2.get_normal_bool_value();
+    let numb2 = param3.get_normal_bool_value();
 
     let rslt = numb1 && numb2;
 
-    param1.value = ValueForm::NormalBool(rslt);
+    *param1 = Value::Bool(rslt);
 }
 
 pub(crate) fn orr(current_proc: &mut Procedure) {
@@ -116,14 +116,14 @@ pub(crate) fn orr(current_proc: &mut Procedure) {
     let param3 = current_proc.get_value(&parameters[2]);
     let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
 
-    assert!(param1.typee == TYPE_BOOL && param1.value.is_normal_bool());
-    assert!(param2.typee == TYPE_BOOL && param2.value.is_normal_bool());
-    assert!(param3.typee == TYPE_BOOL && param3.value.is_normal_bool());
+    assert!(param1.typee() == TYPE_BOOL && param1.is_normal_bool());
+    assert!(param2.typee() == TYPE_BOOL && param2.is_normal_bool());
+    assert!(param3.typee() == TYPE_BOOL && param3.is_normal_bool());
 
-    let numb1 = param2.value.get_normal_bool_value();
-    let numb2 = param3.value.get_normal_bool_value();
+    let numb1 = param2.get_normal_bool_value();
+    let numb2 = param3.get_normal_bool_value();
 
     let rslt = numb1 || numb2;
 
-    param1.value = ValueForm::NormalBool(rslt);
+    *param1 = Value::Bool(rslt);
 }
