@@ -16,6 +16,7 @@ pub const TYPE_BOOL: &str = "bool";
 
 // Param types
 const TYPE_VAR: &str = "VAR";
+const TYPE_VAR_ARRAY: &str = "VAR_ARRAY";
 const TYPE_TYPE: &str = "TYPE";
 const TYPE_FLAG: &str = "FLAG";
 const TYPE_PROC: &str = "PROC";
@@ -68,42 +69,42 @@ impl Value {
         }
     }
     ///Returns a clone of the string value contained. It panics if the value is not NormalText
-    pub fn get_normal_text_value(&self) -> String {
+    pub fn get_text_value(&self) -> String {
         match self {
             Value::Text(x) => x.clone(),
             _ => panic!("atempted to get NormalText valueForm without being NormalText"),
         }
     }
     ///Returns a clone of the f64 value contained. It panics if the value is not NormalNumb
-    pub fn get_normal_numb_value(&self) -> f64 {
+    pub fn get_numb_value(&self) -> f64 {
         match self {
             Value::Numb(x) => x.clone(),
             _ => panic!("atempted to get NormalNumb valueForm without being NormalNumb"),
         }
     }
     ///Returns a clone of the bool value contained. It panics if the value is not NormalBool
-    pub fn get_normal_bool_value(&self) -> bool {
+    pub fn get_bool_value(&self) -> bool {
         match self {
             Value::Bool(x) => x.clone(),
             _ => panic!("atempted to get NormalBool valueForm without being NormalBool"),
         }
     }
 
-    pub fn is_normal_text(&self) -> bool {
+    pub fn is_text(&self) -> bool {
         match self {
             Value::Text(_) => true,
             _ => false,
         }
     }
 
-    pub fn is_normal_numb(&self) -> bool {
+    pub fn is_numb(&self) -> bool {
         match self {
             Value::Numb(_) => true,
             _ => false,
         }
     }
 
-    pub fn is_normal_bool(&self) -> bool {
+    pub fn is_bool(&self) -> bool {
         match self {
             Value::Bool(_) => true,
             _ => false,
@@ -149,10 +150,11 @@ impl Value {
 #[derive(Clone)]
 pub struct ActionDef {
     method: fn(&mut Procedure),
-    parameters_types: Vec<&'static str>,
+    // parameters_types: Vec<&'static str>,
+    parameters_types: &'static [&'static str],
 }
 impl ActionDef {
-    pub fn new(method: fn(&mut Procedure), parameters_types: Vec<&'static str>) -> Self {
+    pub fn new(method: fn(&mut Procedure), parameters_types: &'static [&'static str]) -> Self {
         ActionDef {
             method,
             parameters_types,
@@ -242,10 +244,12 @@ impl std::ops::DerefMut for StructMap {
 #[derive(Debug, Clone)]
 pub struct Procedure {
     name: String,
-    //                                type    name
-    input_vars_and_types: Option<HashMap<Name, Type>>,
+    //                                   type  name
+    input_args_and_types: Option<HashMap<Name, Type>>,
     output_type: Option<String>,
     output_value: Option<Value>,
+
+    proc_exe_args: Vec<Value>,
 
     action_list: Vec<Action>,
     flag_map: FlagMap,
@@ -258,7 +262,7 @@ pub struct Procedure {
 impl Procedure {
     fn new(
         name: String,
-        input_vars_and_types: Option<HashMap<Name, Type>>,
+        input_args_and_types: Option<HashMap<Name, Type>>,
         output_type: Option<String>,
         action_vec: Vec<Action>,
         flag_map: FlagMap,
@@ -266,9 +270,10 @@ impl Procedure {
     ) -> Self {
         Self {
             name,
-            input_vars_and_types,
+            input_args_and_types,
             output_type,
             output_value: None,
+            proc_exe_args: Vec::new(),
             action_list: action_vec,
             flag_map,
             var_map: VariableMap::new(),
@@ -303,9 +308,12 @@ impl Procedure {
             assert!(self.var_map.contains_key(&var_name));
 
             self.var_map[&var_name].clone()
-        } else if param.starts_with('@') {
-            todo!("procedure executing is not implemented yet!");
-        } else if param.starts_with('\"') {
+        }
+        // else if param.starts_with('@') {
+        //     let proc_name = param.trim_start_matches('@');
+        //     interpreter.proc_map[proc_name].run_proc(input_values, actions_def)
+        // }
+        else if param.starts_with('\"') {
             Value::Text(param.trim_matches('\"').to_string())
         } else if let Some(boolean) = param.parse::<bool>().ok() {
             Value::Bool(boolean)
@@ -347,9 +355,9 @@ impl Procedure {
         actions_def: &HashMap<String, ActionDef>,
     ) -> Option<Value> {
         if input_values.is_some() {
-            assert!(self.input_vars_and_types.is_some());
+            assert!(self.input_args_and_types.is_some());
             assert!(
-                self.input_vars_and_types.as_ref().unwrap().len()
+                self.input_args_and_types.as_ref().unwrap().len()
                     == input_values.as_ref().unwrap().len()
             );
         }
@@ -357,7 +365,7 @@ impl Procedure {
         match input_values {
             Some(iv) => {
                 for (i, (name, typee)) in self
-                    .input_vars_and_types
+                    .input_args_and_types
                     .as_ref()
                     .unwrap()
                     .clone()

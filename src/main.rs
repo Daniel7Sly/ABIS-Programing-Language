@@ -7,7 +7,7 @@ fn main() -> Result<(), AbisError> {
 
     //TODO: Interpreter should have a single method to add actions, load the script, and run at the same time.
 
-    interpreter.add_action(ACTION_PRINTLN, ActionDef::new(println, vec![TYPE_TEXT]));
+    interpreter.add_action(ACTION_PRINTLN, ActionDef::new(println, ACTION_PRINTLN_ARGS));
 
     let script = fs::read_to_string("test.abis").expect("Unable to read file!");
 
@@ -18,20 +18,21 @@ fn main() -> Result<(), AbisError> {
 }
 
 const ACTION_PRINTLN: &str = "println";
+const ACTION_PRINTLN_ARGS: &[&str] = &[TYPE_TEXT];
 fn println(current_proc: &mut Procedure) {
     let parameters = current_proc.get_parameters_values();
 
     assert!(parameters.len() == 1);
 
     let value = &parameters[0];
-    if value.is_normal_text() {
-        let text = parameters[0].get_normal_text_value();
+    if value.is_text() {
+        let text = parameters[0].get_text_value();
         println!("{}", text);
-    } else if value.is_normal_numb() {
-        let text = parameters[0].get_normal_numb_value();
+    } else if value.is_numb() {
+        let text = parameters[0].get_numb_value();
         println!("{}", text);
-    } else if value.is_normal_bool() {
-        let text = parameters[0].get_normal_bool_value();
+    } else if value.is_bool() {
+        let text = parameters[0].get_bool_value();
         println!("{}", text);
     }
 }

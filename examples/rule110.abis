@@ -1,0 +1,140 @@
+proc main is
+    # Creates the initial state
+    var #numb state
+    # 1 means alive, 0 means dead
+    psh $state 1 psh $state 0 psh $state 0 psh $state 0 psh $state 0
+    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
+    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
+    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
+
+    var numb count
+    var bool cmp
+    Loop:
+        arg $state
+        exe @next_state
+        arg $state
+        exe @print_state
+    LoopEnd:
+        add $count 1
+        smt $cmp $count $STATE_SIZE
+        ift $cmp Loop
+end
+
+const STATE_SIZE 20 end
+
+proc print_state in #numb state is
+    var numb i
+    Loop:
+        println $state#$i
+    LoopEnd:
+        add $i 1
+        smt $cmp $i $STATE_SIZE
+        ift $cmp Loop
+end
+
+proc next_state in #numb state is
+    var numb i
+    var numb j giv $j 1
+    var numb k giv $k 2
+    var bool cmp1
+    var bool cmp2
+
+
+    Loop:
+        # Pattern_111
+        eql $cmp1 $state#i 1
+        eql $cmp2 $state#j 1
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 1
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_111
+
+        # Pattern_110
+        eql $cmp1 $state#i 1
+        eql $cmp2 $state#j 1
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 0
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_110
+        
+        # Pattern_101
+        eql $cmp1 $state#i 1
+        eql $cmp2 $state#j 0
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 1
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_101
+        
+        # Pattern_100
+        eql $cmp1 $state#i 1
+        eql $cmp2 $state#j 0
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 0
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_100
+
+        # Pattern_011
+        eql $cmp1 $state#i 0
+        eql $cmp2 $state#j 1
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 1
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_011
+
+        # Pattern_010
+        eql $cmp1 $state#i 0
+        eql $cmp2 $state#j 1
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 0
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_010
+
+        # Pattern_001
+        eql $cmp1 $state#i 0
+        eql $cmp2 $state#j 0
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 1
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_001
+
+        # Pattern_000
+        eql $cmp1 $state#i 0
+        eql $cmp2 $state#j 0
+        and $cmp2 $cmp1 $cmp2
+        eql $cmp1 $state#k 0
+        and $cmp2 $cmp1 $cmp2
+        ift $cmp2 Pattern_000
+
+        Pattern_111:
+            giv $state#$j 0
+            jmp LoopEnd
+        Pattern_110:
+            giv $state#$j 1
+            jmp LoopEnd
+        Pattern_101:
+            giv $state#$j 1
+            jmp LoopEnd
+        Pattern_100:
+            giv $state#$j 0
+            jmp LoopEnd
+        Pattern_011:
+            giv $state#$j 1
+            jmp LoopEnd
+        Pattern_010:
+            giv $state#$j 1
+            jmp LoopEnd
+        Pattern_001:
+            giv $state#$j 1
+            jmp LoopEnd
+        Pattern_000:
+            giv $state#$j 0
+            jmp LoopEnd
+    
+    LoopEnd:
+        add $i 1
+        add $j 1
+        add $k 1
+        smt $cmp1 $k $STATE_SIZE
+        ift $cmp1 Loop
+end
+

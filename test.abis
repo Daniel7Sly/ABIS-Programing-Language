@@ -1,8 +1,3 @@
 proc main is
     println "This is the main proc."
-    exe @sec
-end
-
-proc sec is
-    println "This is the new proc."
 end

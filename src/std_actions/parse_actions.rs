@@ -1,7 +1,10 @@
-use crate::{Procedure, Value, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT};
+use crate::{
+    Procedure, Value, TYPE_BOOL, TYPE_NEUTRAL, TYPE_NUMB, TYPE_TEXT, TYPE_VAR_BOOL, TYPE_VAR_NUMB,
+    TYPE_VAR_TEXT,
+};
 
-// PARSE
-
+pub(super) const ACTION_PRS: &str = "prs";
+pub(super) const ACTION_PRS_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_TEXT, TYPE_VAR_BOOL];
 /// This action parses text into a number.
 /// The 3rd param is a boolean representing if the parsing
 /// was done sucssedfully or not.
@@ -15,7 +18,7 @@ pub(crate) fn prs(current_proc: &mut Procedure) {
     let param2 = current_proc.get_value(&parameters[1]);
     assert!(param2.typee() == TYPE_TEXT, "2º param is not of type TEXT");
 
-    let text = param2.get_normal_text_value();
+    let text = param2.get_text_value();
 
     let numb: Option<f64> = text.parse().ok();
 
@@ -34,6 +37,8 @@ pub(crate) fn prs(current_proc: &mut Procedure) {
     }
 }
 
+pub(super) const ACTION_TXT: &str = "txt";
+pub(super) const ACTION_TXT_ARGS: &[&str] = &[TYPE_VAR_TEXT, TYPE_NEUTRAL];
 /// Parses any given value into text.
 ///
 /// TXT $text anything
