@@ -1,8 +1,8 @@
-use crate::{Procedure, Value, TYPE_NUMB, TYPE_VAR, TYPE_VAR_ARRAY, TYPE_VAR_NUMB};
+use crate::{Program, Value, TYPE_NUMB, TYPE_VAR, TYPE_VAR_ARRAY, TYPE_VAR_NUMB};
 
 pub(super) const ACTION_ARI: &str = "ari";
 pub(super) const ACTION_ARI_ARGS: &[&str] = &[TYPE_VAR, TYPE_VAR_ARRAY, TYPE_NUMB];
-pub(super) fn ari(current_proc: &mut Procedure) {
+pub(super) fn ari(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == ACTION_ARI_ARGS.len());
@@ -23,9 +23,9 @@ pub(super) fn ari(current_proc: &mut Procedure) {
     }
 }
 
-pub(super) const ACTION_ARL: &str = "ari";
+pub(super) const ACTION_ARL: &str = "arl";
 pub(super) const ACTION_ARL_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_VAR_ARRAY];
-pub(super) fn arl(current_proc: &mut Procedure) {
+pub(super) fn arl(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == ACTION_ARL_ARGS.len());
@@ -41,3 +41,5 @@ pub(super) fn arl(current_proc: &mut Procedure) {
         _ => unreachable!(),
     }
 }
+
+//TODO: PSH -> pushes new elements to the array

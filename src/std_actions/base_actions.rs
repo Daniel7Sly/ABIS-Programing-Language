@@ -1,14 +1,14 @@
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::{
-    Procedure, Value, TYPE_BOOL, TYPE_FLAG, TYPE_NEUTRAL, TYPE_NUMB, TYPE_PROC, TYPE_TYPE,
-    TYPE_VAR, TYPE_VAR_NUMB,
+    Program, Value, TYPE_BOOL, TYPE_FLAG, TYPE_NEUTRAL, TYPE_NUMB, TYPE_PROC, TYPE_TYPE, TYPE_VAR,
+    TYPE_VAR_NUMB,
 };
 
 pub(super) const ACTION_VAR: &str = "var";
 pub(super) const ACTION_VAR_ARGS: &[&str] = &[TYPE_TYPE, TYPE_NEUTRAL];
 ///Creates a new variable to the procedure
-pub(super) fn var(current_proc: &mut Procedure) {
+pub(super) fn var(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -21,7 +21,7 @@ pub(super) fn var(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_GIV: &str = "giv";
 pub(super) const ACTION_GIV_ARGS: &[&str] = &[TYPE_VAR, TYPE_NEUTRAL];
-pub(super) fn giv(current_proc: &mut Procedure) {
+pub(super) fn giv(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -36,7 +36,7 @@ pub(super) fn giv(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_EXE: &str = "exe";
 pub(super) const ACTION_EXE_ARGS: &[&str] = &[TYPE_PROC];
-pub(super) fn exe(current_proc: &mut Procedure) {
+pub(super) fn exe(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 1);
@@ -48,22 +48,24 @@ pub(super) fn exe(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_RTN: &str = "rtn";
 pub(super) const ACTION_RTN_ARGS: &[&str] = &[TYPE_NEUTRAL];
-pub(super) fn rtn(current_proc: &mut Procedure) {
+pub(super) fn rtn(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 1);
 
-    let output_value = current_proc.get_value(&parameters[0]);
+    let _output_value = current_proc.get_value(&parameters[0]);
 
-    assert!(current_proc.output_type.is_some());
-    assert!(output_value.typee() == current_proc.output_type.as_deref().unwrap());
+    todo!()
 
-    current_proc.output_value = Some(output_value);
+    // assert!(current_proc.output_type.is_some());
+    // assert!(output_value.typee() == current_proc.output_type.as_deref().unwrap());
+
+    // current_proc.output_value = Some(output_value);
 }
 
 pub(super) const ACTION_JMP: &str = "jmp";
 pub(super) const ACTION_JMP_ARGS: &[&str] = &[TYPE_FLAG];
-pub(super) fn jmp(current_proc: &mut Procedure) {
+pub(super) fn jmp(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 1);
@@ -79,7 +81,7 @@ pub(super) fn jmp(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_IFT: &str = "ift";
 pub(super) const ACTION_IFT_ARGS: &[&str] = &[TYPE_BOOL, TYPE_FLAG];
-pub(super) fn ift(current_proc: &mut Procedure) {
+pub(super) fn ift(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -99,7 +101,7 @@ pub(super) fn ift(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_IFF: &str = "iff";
 pub(super) const ACTION_IFF_ARGS: &[&str] = &[TYPE_BOOL, TYPE_FLAG];
-pub(super) fn iff(current_proc: &mut Procedure) {
+pub(super) fn iff(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -119,7 +121,7 @@ pub(super) fn iff(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_RND: &str = "rnd";
 pub(super) const ACTION_RND_ARGS: &[&str] = &[TYPE_VAR_NUMB];
-pub(super) fn rnd(current_proc: &mut Procedure) {
+pub(super) fn rnd(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 1);

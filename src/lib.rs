@@ -149,12 +149,12 @@ impl Value {
 
 #[derive(Clone)]
 pub struct ActionDef {
-    method: fn(&mut Procedure),
+    method: fn(&mut Program),
     // parameters_types: Vec<&'static str>,
     parameters_types: &'static [&'static str],
 }
 impl ActionDef {
-    pub fn new(method: fn(&mut Procedure), parameters_types: &'static [&'static str]) -> Self {
+    pub fn new(method: fn(&mut Program), parameters_types: &'static [&'static str]) -> Self {
         ActionDef {
             method,
             parameters_types,
@@ -242,15 +242,10 @@ impl std::ops::DerefMut for StructMap {
 }
 
 #[derive(Debug, Clone)]
-pub struct Procedure {
+pub struct Program {
     name: String,
-    //                                   type  name
-    input_args_and_types: Option<HashMap<Name, Type>>,
-    output_type: Option<String>,
-    output_value: Option<Value>,
 
-    proc_exe_args: Vec<Value>,
-
+    //proc_exe_args: Vec<Value>,
     action_list: Vec<Action>,
     flag_map: FlagMap,
     var_map: VariableMap,
@@ -259,21 +254,16 @@ pub struct Procedure {
     current_action_index: usize,
 }
 
-impl Procedure {
+impl Program {
     fn new(
         name: String,
-        input_args_and_types: Option<HashMap<Name, Type>>,
-        output_type: Option<String>,
         action_vec: Vec<Action>,
         flag_map: FlagMap,
         //line: usize,
     ) -> Self {
         Self {
             name,
-            input_args_and_types,
-            output_type,
-            output_value: None,
-            proc_exe_args: Vec::new(),
+            //proc_exe_args: Vec::new(),
             action_list: action_vec,
             flag_map,
             var_map: VariableMap::new(),
@@ -349,66 +339,19 @@ impl Procedure {
         self.var_map.insert(name, value);
     }
 
-    fn run_proc(
-        &mut self,
-        input_values: Option<Vec<Value>>,
-        actions_def: &HashMap<String, ActionDef>,
-    ) -> Option<Value> {
-        if input_values.is_some() {
-            assert!(self.input_args_and_types.is_some());
-            assert!(
-                self.input_args_and_types.as_ref().unwrap().len()
-                    == input_values.as_ref().unwrap().len()
-            );
-        }
-        //Creates the variables with the input values
-        match input_values {
-            Some(iv) => {
-                for (i, (name, typee)) in self
-                    .input_args_and_types
-                    .as_ref()
-                    .unwrap()
-                    .clone()
-                    .iter()
-                    .enumerate()
-                {
-                    let input_value = &iv[i];
-                    //assert!(input_value.typee == *typee);
-                    self.add_new_variable_with_value(
-                        name.clone(),
-                        typee.clone(),
-                        input_value.clone(),
-                    );
-                }
-            }
-            None => {}
-        }
-
-        //Run procedure
-        let mut i = 0;
-        while i < self.action_list.len() {
-            //println!("index = {}", i);
-            self.current_action_index = i;
-            self.next_action_index = i + 1;
-            let action = self.action_list[i].clone();
-            // Runs the action
-            (actions_def[&action.name].method)(self);
-
-            i = self.next_action_index;
-        }
-
-        return None;
+    fn run_proc(&mut self, actions_def: &HashMap<String, ActionDef>) -> Option<Value> {
+        todo!()
     }
 }
 
-type ProceduresMap = HashMap<String, Procedure>;
+type ProceduresMap = HashMap<String, Program>;
 
 pub struct Interpreter {
     action_map: HashMap<String, ActionDef>,
     proc_map: ProceduresMap,
     struct_map: StructMap,
     //string_literals_list: Vec<String>,
-    block_call_stack: Vec<Procedure>,
+    block_call_stack: Vec<Program>,
 }
 impl Interpreter {
     pub fn new() -> Self {
@@ -448,7 +391,7 @@ impl Interpreter {
             .proc_map
             .get_mut("main")
             .unwrap()
-            .run_proc(None, &self.action_map);
+            .run_proc(&self.action_map);
 
         Ok(())
     }

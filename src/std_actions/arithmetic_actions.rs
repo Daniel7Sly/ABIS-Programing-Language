@@ -1,10 +1,10 @@
-use crate::{Procedure, Value, TYPE_NUMB, TYPE_VAR_NUMB};
+use crate::{Program, Value, TYPE_NUMB, TYPE_VAR_NUMB};
 
 // Arithmetic
 
 pub(super) const ACTION_ADD: &str = "add";
 pub(super) const ACTION_ADD_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_NUMB];
-pub(super) fn add(current_proc: &mut Procedure) {
+pub(super) fn add(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -25,7 +25,7 @@ pub(super) fn add(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_SUB: &str = "sub";
 pub(super) const ACTION_SUB_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_NUMB];
-pub(super) fn sub(current_proc: &mut Procedure) {
+pub(super) fn sub(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -46,7 +46,7 @@ pub(super) fn sub(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_MUL: &str = "mul";
 pub(super) const ACTION_MUL_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_NUMB];
-pub(super) fn mul(current_proc: &mut Procedure) {
+pub(super) fn mul(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -67,7 +67,7 @@ pub(super) fn mul(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_DIV: &str = "div";
 pub(super) const ACTION_DIV_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_NUMB];
-pub(super) fn div(current_proc: &mut Procedure) {
+pub(super) fn div(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);
@@ -88,7 +88,7 @@ pub(super) fn div(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_MOD: &str = "mod";
 pub(super) const ACTION_MOD_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_NUMB];
-pub(super) fn mod_(current_proc: &mut Procedure) {
+pub(super) fn mod_(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);

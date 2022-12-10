@@ -1,0 +1,67 @@
+proc main is
+    var numb a
+    giv $a 3
+    
+    arg [$a $a]
+    exe @power
+    giv $a @
+    println $a
+end
+
+proc power in numb base numb exponent out numb is
+    var numb rslt giv $rslt $base
+    var numb count giv $count 0
+    var bool cmp
+    Loop:
+        mult $rslt $base 
+        LoopEnd:
+            add $count 1
+            smt $cmp $count $exponent
+            ift $cmp Loop
+    rtn $rslt
+end
+
+struct Pos is
+    x numb
+    y numb
+end
+
+--------------------------------------
+# Struct Definition
+
+str Pos
+stf numb x Pos
+stf numb y Pos
+
+# With syntatic sugar
+str Pos [numb x numb y]
+
+# str -> define new struct args[struct_name] 
+# stf -> define new field for the struct args[field_type field_name struct_name]
+
+
+@main:
+    var numb a
+    giv $a 3    
+    arg $a 
+    arg $a
+    exe @power
+    giv $a @
+    println $a
+
+@power:
+    #Args
+        var numb base giv $base @
+        var numb exponent giv $exponent @
+        
+    var numb rslt giv $rslt $base
+    var numb count giv $count 0
+    var bool cmp
+    Loop:
+        mult $rslt $base 
+        LoopEnd:
+            add $count 1
+            smt $cmp $count $exponent
+            ift $cmp Loop
+    rtn $rslt
+

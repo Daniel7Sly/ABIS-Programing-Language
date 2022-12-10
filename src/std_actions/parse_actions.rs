@@ -1,5 +1,5 @@
 use crate::{
-    Procedure, Value, TYPE_BOOL, TYPE_NEUTRAL, TYPE_NUMB, TYPE_TEXT, TYPE_VAR_BOOL, TYPE_VAR_NUMB,
+    Program, Value, TYPE_BOOL, TYPE_NEUTRAL, TYPE_NUMB, TYPE_TEXT, TYPE_VAR_BOOL, TYPE_VAR_NUMB,
     TYPE_VAR_TEXT,
 };
 
@@ -10,7 +10,7 @@ pub(super) const ACTION_PRS_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_TEXT, TYPE_VAR
 /// was done sucssedfully or not.
 ///
 /// PRS $numb text $bool
-pub(crate) fn prs(current_proc: &mut Procedure) {
+pub(crate) fn prs(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -42,7 +42,7 @@ pub(super) const ACTION_TXT_ARGS: &[&str] = &[TYPE_VAR_TEXT, TYPE_NEUTRAL];
 /// Parses any given value into text.
 ///
 /// TXT $text anything
-pub(crate) fn txt(current_proc: &mut Procedure) {
+pub(crate) fn txt(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 2);

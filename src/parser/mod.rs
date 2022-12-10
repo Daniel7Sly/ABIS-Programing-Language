@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use crate::parser::lexer::{lexer, Token};
 
 use crate::{
-    AbisError, Action, ActionDef, FlagMap, ParseProcError, ParseStructError, Procedure,
-    ProceduresMap, Struct, StructMap, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT,
+    AbisError, Action, ActionDef, FlagMap, ParseProcError, ParseStructError, ProceduresMap,
+    Program, Struct, StructMap, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT,
 };
 
 // KEYWORDS:
@@ -323,7 +323,7 @@ fn parse_proc(
     output_type: Option<Token>,
     structs: &StructMap,
     action_map: &HashMap<String, ActionDef>,
-) -> Result<Procedure, ParseProcError> {
+) -> Result<Program, ParseProcError> {
     assert!(body.len() > 2);
     let proc_name = body[0].word.clone();
     let input_vars_and_types: Option<HashMap<Name, Type>> = match input_vars {
@@ -363,13 +363,7 @@ fn parse_proc(
 
     let (action_vec, flag_map) = parse_proc_body(body, structs, action_map)?;
 
-    let new_proc = Procedure::new(
-        proc_name,
-        input_vars_and_types,
-        output_type,
-        action_vec,
-        flag_map,
-    );
+    let new_proc = Program::new(proc_name, action_vec, flag_map);
 
     return Ok(new_proc);
 }

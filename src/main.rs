@@ -1,6 +1,6 @@
 use std::fs;
 
-use abis::{AbisError, ActionDef, Interpreter, Procedure, TYPE_TEXT};
+use abis::{AbisError, ActionDef, Interpreter, Program, TYPE_TEXT};
 
 fn main() -> Result<(), AbisError> {
     let mut interpreter = Interpreter::new();
@@ -19,7 +19,7 @@ fn main() -> Result<(), AbisError> {
 
 const ACTION_PRINTLN: &str = "println";
 const ACTION_PRINTLN_ARGS: &[&str] = &[TYPE_TEXT];
-fn println(current_proc: &mut Procedure) {
+fn println(current_proc: &mut Program) {
     let parameters = current_proc.get_parameters_values();
 
     assert!(parameters.len() == 1);

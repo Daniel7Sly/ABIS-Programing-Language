@@ -1,10 +1,10 @@
-use crate::{Procedure, Value, TYPE_BOOL, TYPE_NUMB, TYPE_VAR_BOOL};
+use crate::{Program, Value, TYPE_BOOL, TYPE_NUMB, TYPE_VAR_BOOL};
 
 //Comparation and logic
 
 pub(super) const ACTION_BGT: &str = "bgt";
 pub(super) const ACTION_BGT_ARGS: &[&str] = &[TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB];
-pub(super) fn bgt(current_proc: &mut Procedure) {
+pub(super) fn bgt(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -27,7 +27,7 @@ pub(super) fn bgt(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_SMT: &str = "smt";
 pub(super) const ACTION_SMT_ARGS: &[&str] = &[TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB];
-pub(super) fn smt(current_proc: &mut Procedure) {
+pub(super) fn smt(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -50,7 +50,7 @@ pub(super) fn smt(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_EQL: &str = "eql";
 pub(super) const ACTION_EQL_ARGS: &[&str] = &[TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB];
-pub(super) fn eql(current_proc: &mut Procedure) {
+pub(super) fn eql(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -73,7 +73,7 @@ pub(super) fn eql(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_DIF: &str = "dif";
 pub(super) const ACTION_DIF_ARGS: &[&str] = &[TYPE_VAR_BOOL, TYPE_NUMB, TYPE_NUMB];
-pub(super) fn dif(current_proc: &mut Procedure) {
+pub(super) fn dif(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -96,7 +96,7 @@ pub(super) fn dif(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_AND: &str = "and";
 pub(super) const ACTION_AND_ARGS: &[&str] = &[TYPE_VAR_BOOL, TYPE_BOOL, TYPE_BOOL];
-pub(super) fn and(current_proc: &mut Procedure) {
+pub(super) fn and(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
@@ -119,7 +119,7 @@ pub(super) fn and(current_proc: &mut Procedure) {
 
 pub(super) const ACTION_ORR: &str = "orr";
 pub(super) const ACTION_ORR_ARGS: &[&str] = &[TYPE_VAR_BOOL, TYPE_BOOL, TYPE_BOOL];
-pub(super) fn orr(current_proc: &mut Procedure) {
+pub(super) fn orr(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
     assert!(parameters.len() == 3);
