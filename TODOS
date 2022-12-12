@@ -2,9 +2,6 @@
 
 Actions:
     psh
-    arg
 
-Update Actions:
-    exe
-    rtn
-
+Update:
+    get_value to suport @

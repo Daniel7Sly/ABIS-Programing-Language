@@ -8,26 +8,26 @@ use crate::{
 pub(super) const ACTION_VAR: &str = "var";
 pub(super) const ACTION_VAR_ARGS: &[&str] = &[TYPE_TYPE, TYPE_NEUTRAL];
 ///Creates a new variable to the procedure
-pub(super) fn var(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn var(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 2);
 
     let name = parameters[1].clone();
     let typee = parameters[0].clone();
 
-    current_proc.add_new_variable(name, typee);
+    program.add_new_variable(name, typee);
 }
 
 pub(super) const ACTION_GIV: &str = "giv";
 pub(super) const ACTION_GIV_ARGS: &[&str] = &[TYPE_VAR, TYPE_NEUTRAL];
-pub(super) fn giv(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn giv(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 2);
 
-    let param2 = current_proc.get_value(&parameters[1]);
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
+    let param2 = program.get_value(&parameters[1]);
+    let param1 = program.get_variable_value_mutref(&parameters[0]);
 
     assert!(param1.typee() == param2.typee());
 
@@ -36,98 +36,114 @@ pub(super) fn giv(current_proc: &mut Program) {
 
 pub(super) const ACTION_EXE: &str = "exe";
 pub(super) const ACTION_EXE_ARGS: &[&str] = &[TYPE_PROC];
-pub(super) fn exe(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn exe(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 1);
     assert!(parameters[0].starts_with("@"));
 
-    todo!()
-    //this will simply execute the proc and ignore the returned value if it returned any.
-    //current_proc.get_value(&parameters[0]);
+    let flag = &parameters[0];
+
+    assert!(program.flag_map.contains_key(flag));
+
+    program.call_stack.push(program.current_action_index);
+
+    program.next_action_index = program.flag_map[flag];
 }
 
 pub(super) const ACTION_RTN: &str = "rtn";
 pub(super) const ACTION_RTN_ARGS: &[&str] = &[TYPE_NEUTRAL];
-pub(super) fn rtn(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn rtn(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 1);
 
-    let _output_value = current_proc.get_value(&parameters[0]);
+    if parameters[0] != "_".to_string() {
+        let output_value = program.get_value(&parameters[0]);
+        program.value_stack.push(output_value);
+    }
 
-    todo!()
+    program.next_action_index = program
+        .call_stack
+        .pop()
+        .expect("Hit RTN with callstack empty.")
+        + 1;
+}
 
-    // assert!(current_proc.output_type.is_some());
-    // assert!(output_value.typee() == current_proc.output_type.as_deref().unwrap());
+pub(super) const ACTION_ARG: &str = "arg";
+pub(super) const ACTION_ARG_ARGS: &[&str] = &[TYPE_NEUTRAL];
+pub(super) fn arg(program: &mut Program) {
+    let parameter: Vec<Value> = program.get_parameters_values();
 
-    // current_proc.output_value = Some(output_value);
+    assert!(parameter.len() == 1);
+
+    program.value_stack.push(parameter[0].clone());
 }
 
 pub(super) const ACTION_JMP: &str = "jmp";
 pub(super) const ACTION_JMP_ARGS: &[&str] = &[TYPE_FLAG];
-pub(super) fn jmp(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn jmp(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 1);
 
     let param = &parameters[0];
 
-    println!("{:?}", current_proc.flag_map);
+    println!("{:?}", program.flag_map);
 
-    assert!(current_proc.flag_map.0.contains_key(param), "{}", param);
+    assert!(program.flag_map.0.contains_key(param), "{}", param);
 
-    current_proc.next_action_index = current_proc.flag_map.0[param];
+    program.next_action_index = program.flag_map.0[param];
 }
 
 pub(super) const ACTION_IFT: &str = "ift";
 pub(super) const ACTION_IFT_ARGS: &[&str] = &[TYPE_BOOL, TYPE_FLAG];
-pub(super) fn ift(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn ift(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 2);
 
-    let param1 = current_proc.get_value(&parameters[0]);
+    let param1 = program.get_value(&parameters[0]);
 
     let param2 = &parameters[1];
 
     assert!(param1.typee() == TYPE_BOOL);
 
-    assert!(current_proc.flag_map.0.contains_key(param2));
+    assert!(program.flag_map.0.contains_key(param2));
 
     if param1.get_bool_value() == true {
-        current_proc.next_action_index = current_proc.flag_map.0[param2];
+        program.next_action_index = program.flag_map.0[param2];
     }
 }
 
 pub(super) const ACTION_IFF: &str = "iff";
 pub(super) const ACTION_IFF_ARGS: &[&str] = &[TYPE_BOOL, TYPE_FLAG];
-pub(super) fn iff(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn iff(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 2);
 
-    let param1 = current_proc.get_value(&parameters[0]);
+    let param1 = program.get_value(&parameters[0]);
 
     let param2 = &parameters[1];
 
     assert!(param1.typee() == TYPE_BOOL);
 
-    assert!(current_proc.flag_map.contains_key(param2));
+    assert!(program.flag_map.contains_key(param2));
 
     if param1.get_bool_value() != true {
-        current_proc.next_action_index = current_proc.flag_map[param2];
+        program.next_action_index = program.flag_map[param2];
     }
 }
 
 pub(super) const ACTION_RND: &str = "rnd";
 pub(super) const ACTION_RND_ARGS: &[&str] = &[TYPE_VAR_NUMB];
-pub(super) fn rnd(current_proc: &mut Program) {
-    let parameters: Vec<String> = current_proc.get_raw_parameters();
+pub(super) fn rnd(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == 1);
 
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
+    let param1 = program.get_variable_value_mutref(&parameters[0]);
 
     assert!(param1.typee() == TYPE_NUMB);
 

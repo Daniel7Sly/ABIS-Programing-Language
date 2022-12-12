@@ -49,6 +49,7 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
             parameters_types: base_actions::ACTION_EXE_ARGS,
         },
     );
+    // RTN
     map.insert(
         base_actions::ACTION_RTN.to_string(),
         ActionDef {
@@ -56,6 +57,15 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
             parameters_types: base_actions::ACTION_RTN_ARGS,
         },
     );
+    // ARG
+    map.insert(
+        base_actions::ACTION_ARG.to_string(),
+        ActionDef {
+            method: base_actions::arg,
+            parameters_types: base_actions::ACTION_ARG_ARGS,
+        },
+    );
+    // JMP
     map.insert(
         base_actions::ACTION_JMP.to_string(),
         ActionDef {
