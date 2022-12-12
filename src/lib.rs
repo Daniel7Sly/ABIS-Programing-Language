@@ -243,33 +243,29 @@ impl std::ops::DerefMut for StructMap {
 
 #[derive(Debug, Clone)]
 pub struct Program {
-    name: String,
+    call_stack: Vec<usize>,
+    value_stack: Vec<Value>,
 
-    //proc_exe_args: Vec<Value>,
-    action_list: Vec<Action>,
     flag_map: FlagMap,
+    actions: Vec<Action>,
+
     var_map: VariableMap,
+    struct_map: StructMap,
 
-    next_action_index: usize,
     current_action_index: usize,
+    next_action_index: usize,
 }
-
 impl Program {
-    fn new(
-        name: String,
-        action_vec: Vec<Action>,
-        flag_map: FlagMap,
-        //line: usize,
-    ) -> Self {
+    fn new(action_vec: Vec<Action>, flag_map: FlagMap) -> Self {
         Self {
-            name,
-            //proc_exe_args: Vec::new(),
-            action_list: action_vec,
+            actions: action_vec,
             flag_map,
             var_map: VariableMap::new(),
+            struct_map: StructMap::new(),
             next_action_index: 0,
             current_action_index: 0,
-            //line,
+            call_stack: Vec::new(),
+            value_stack: Vec::new(),
         }
     }
 
@@ -286,12 +282,10 @@ impl Program {
 
     /// Returns a clone of the raw parameters
     fn get_raw_parameters(&self) -> Vec<String> {
-        self.action_list[self.current_action_index]
-            .parameters
-            .clone()
+        self.actions[self.current_action_index].parameters.clone()
     }
 
-    ///Gets the value of the given parameter. A parameter can be a string, number, boolean, variable
+    /// Gets the value of the given parameter. A parameter can be a string, number, boolean, variable
     fn get_value(&self, param: &String) -> Value {
         if param.starts_with("$") {
             let var_name = param.trim_start_matches('$').to_string();
@@ -314,7 +308,7 @@ impl Program {
         }
     }
 
-    ///Returns a mutable reference of the value of the variable found by the param
+    /// Returns a mutable reference of the value of the variable found by the param
     fn get_variable_value_mutref<'a>(&'a mut self, param: &String) -> &'a mut Value {
         assert!(param.starts_with('$'));
 
@@ -334,74 +328,66 @@ impl Program {
     }
 
     fn add_new_variable_with_value(&mut self, name: String, typee: String, value: Value) {
-        assert!(!self.var_map.0.contains_key(&name),);
+        assert!(!self.var_map.0.contains_key(&name));
         assert!(value.typee() == typee);
         self.var_map.insert(name, value);
     }
 
-    fn run_proc(&mut self, actions_def: &HashMap<String, ActionDef>) -> Option<Value> {
+    pub fn run_program(&mut self, actions_def: &HashMap<String, ActionDef>) {
         todo!()
     }
 }
 
-type ProceduresMap = HashMap<String, Program>;
-
 pub struct Interpreter {
-    action_map: HashMap<String, ActionDef>,
-    proc_map: ProceduresMap,
-    struct_map: StructMap,
-    //string_literals_list: Vec<String>,
-    block_call_stack: Vec<Program>,
+    action_def_map: HashMap<String, ActionDef>,
+    program: Option<Program>,
 }
 impl Interpreter {
     pub fn new() -> Self {
         Self {
-            action_map: std_actions::hashmap_with_default_actions(),
-            proc_map: HashMap::new(),
-            struct_map: StructMap::new(),
+            action_def_map: std_actions::hashmap_with_default_actions(),
+            program: None,
             //string_literals_list: Vec::new(),
-            block_call_stack: Vec::new(),
         }
     }
 
     /// Adds a new action to the interpreter
     pub fn add_action(&mut self, action_name: &str, definition: ActionDef) {
-        self.action_map.insert(action_name.to_string(), definition);
+        self.action_def_map
+            .insert(action_name.to_string(), definition);
     }
 
-    ///Loads the current script reciving it as a string to the interpreter.
+    /// Loads the given script reciving it as a string to the interpreter.
     ///
-    /// Returns a AbisError if the scrript could not be parsed.
+    /// Returns a ParseError if the script could not be parsed.
     ///
     /// The String should contain all the text of a .abis file.
-    pub fn load_script(&mut self, script: String) -> Result<(), AbisError> {
-        let (proc_map, struct_map) = parse_script(script, &self.action_map)?;
-        self.struct_map = struct_map;
-        self.proc_map = proc_map;
+    pub fn load_script(&mut self, script: String) -> Result<(), ParseError> {
+        let (actions, flags) = parse_script(script, &self.action_def_map)?;
+        if let Some(program) = &mut self.program {
+            todo!("adding more than one script is not implemented yet!");
+        } else {
+            self.program = Some(Program::new(actions, flags));
+        }
         Ok(())
     }
 
-    //Runs the current loaded script.
+    /// Runs the current loaded script.
     pub fn run_scripts(&mut self) -> Result<(), AbisError> {
-        if !self.proc_map.contains_key("main") {
-            return Err(AbisError::MainProcedureNotFound);
+        if let Some(prog) = &mut self.program {
+            prog.run_program(&self.action_def_map);
+            Ok(())
+        } else {
+            Err(AbisError::NoLoadedScript)
         }
-
-        let _ = &self
-            .proc_map
-            .get_mut("main")
-            .unwrap()
-            .run_proc(&self.action_map);
-
-        Ok(())
     }
 }
 
 #[derive(Debug, PartialEq)]
 pub enum AbisError {
+    NoLoadedScript,
     MainProcedureNotFound,
     TypeNotDefined(Token),
-    NoLoadedScript(Token),
     StringDeclarationWithoutEnding(Token),
     InvalidBlockStructure(Token),
     InvalidScript(Token),
@@ -418,7 +404,7 @@ pub enum AbisError {
     //Proc Errors
     DuplicateProcedureName(Token),
     ExpectedIsOrInOrOutKW(Token),
-    ErrorParsingProcedure(ParseProcError),
+    ErrorParsingProcedure(ParseError),
 
     //StructErrors
     ErrorParsingStruct(ParseStructError),
@@ -435,7 +421,7 @@ pub enum ParseStructError {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum ParseProcError {
+pub enum ParseError {
     ProcedureNameCanNotContainSpecialCharacters(Token),
     FieldTypeNotDefined(Token),
     DuplicateFieldName(Token),

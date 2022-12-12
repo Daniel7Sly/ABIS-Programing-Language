@@ -42,8 +42,9 @@ pub(super) fn exe(current_proc: &mut Program) {
     assert!(parameters.len() == 1);
     assert!(parameters[0].starts_with("@"));
 
+    todo!()
     //this will simply execute the proc and ignore the returned value if it returned any.
-    current_proc.get_value(&parameters[0]);
+    //current_proc.get_value(&parameters[0]);
 }
 
 pub(super) const ACTION_RTN: &str = "rtn";

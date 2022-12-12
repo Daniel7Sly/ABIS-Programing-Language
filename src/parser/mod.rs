@@ -5,8 +5,8 @@ use std::collections::HashMap;
 use crate::parser::lexer::{lexer, Token};
 
 use crate::{
-    AbisError, Action, ActionDef, FlagMap, ParseProcError, ParseStructError, ProceduresMap,
-    Program, Struct, StructMap, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT,
+    AbisError, Action, ActionDef, FlagMap, ParseError, ParseStructError, Program, Struct,
+    StructMap, TYPE_BOOL, TYPE_NUMB, TYPE_TEXT,
 };
 
 // KEYWORDS:
@@ -29,237 +29,238 @@ type Type = String;
 pub(crate) fn parse_script(
     script: String,
     action_map: &HashMap<String, ActionDef>,
-) -> Result<(ProceduresMap, StructMap), AbisError> {
+) -> Result<(Vec<Action>, FlagMap), ParseError> {
     let tokens: Vec<Token> = lexer(script);
 
-    let (struct_map, procedures_map) = parser(tokens, action_map)?;
+    let (actions, flags) = parse_tokens(tokens, action_map)?;
 
-    return Ok((procedures_map, struct_map));
+    return Ok((actions, flags));
 }
 
-fn parser(
+fn _parser(
     tokens: Vec<Token>,
     action_map: &HashMap<String, ActionDef>,
-) -> Result<(StructMap, ProceduresMap), AbisError> {
-    let mut struct_map: StructMap = StructMap::new();
-    let mut proc_map: ProceduresMap = HashMap::new();
+) -> Result<Program, AbisError> {
+    unimplemented!();
+    // let mut struct_map: StructMap = StructMap::new();
+    // //let mut proc_map: ProceduresMap = HashMap::new();
 
-    // Struct parsing variables
-    //Contains the struct that have to be parsed, contains the body of the struct.
-    let mut struct_map_to_parse: HashMap<Name, Vec<Token>> = HashMap::new();
-    //Used to know what struct we are reading the body.
-    let mut current_struct_name: String = String::new();
+    // // Struct parsing variables
+    // //Contains the struct that have to be parsed, contains the body of the struct.
+    // let mut struct_map_to_parse: HashMap<Name, Vec<Token>> = HashMap::new();
+    // //Used to know what struct we are reading the body.
+    // let mut current_struct_name: String = String::new();
 
-    // Procedures parsing variables
-    // Contains the procedures that have to be parsed, contains the input fields
-    // the output type and the body of the of the procedure.
-    let mut proc_map_to_parse: HashMap<
-        Name,
-        // (body, input, output)
-        (Vec<Token>, Option<Vec<Token>>, Option<Token>),
-    > = HashMap::new();
-    //Used to know what procedure we are reading the body.
-    let mut current_proc_name: String = String::new();
+    // // Procedures parsing variables
+    // // Contains the procedures that have to be parsed, contains the input fields
+    // // the output type and the body of the of the procedure.
+    // let mut proc_map_to_parse: HashMap<
+    //     Name,
+    //     // (body, input, output)
+    //     (Vec<Token>, Option<Vec<Token>>, Option<Token>),
+    // > = HashMap::new();
+    // //Used to know what procedure we are reading the body.
+    // let mut current_proc_name: String = String::new();
 
-    //Used to keep track of the current contex
-    let mut current_contex = MainParserContex::WaitingProcOrStructKW;
+    // //Used to keep track of the current contex
+    // let mut current_contex = MainParserContex::WaitingProcOrStructKW;
 
-    //TODO: add verification for field types and names can not be action names and have special characters ("& $ # @ . = + * - / " | ? ( ) [ ] { }").
+    // //TODO: add verification for field types and names can not be action names and have special characters ("& $ # @ . = + * - / " | ? ( ) [ ] { }").
 
-    assert!(KEYWORDS_QUANT == 6);
+    // assert!(KEYWORDS_QUANT == 6);
 
-    for token in tokens {
-        let word = token.word.as_str();
-        match word {
-            KW_STRUCT => match current_contex {
-                MainParserContex::WaitingProcOrStructKW => {
-                    current_contex = MainParserContex::ExpectingStructName;
-                }
-                _ => {
-                    return Err(AbisError::InvalidKeyWordInCurrentContext(
-                        token,
-                        current_contex.into(),
-                    ))
-                }
-            },
-            KW_END => match current_contex {
-                MainParserContex::ReadingStructBody => {
-                    current_struct_name = String::new();
-                    current_contex = MainParserContex::WaitingProcOrStructKW;
-                }
+    // for token in tokens {
+    //     let word = token.word.as_str();
+    //     match word {
+    //         KW_STRUCT => match current_contex {
+    //             MainParserContex::WaitingProcOrStructKW => {
+    //                 current_contex = MainParserContex::ExpectingStructName;
+    //             }
+    //             _ => {
+    //                 return Err(AbisError::InvalidKeyWordInCurrentContext(
+    //                     token,
+    //                     current_contex.into(),
+    //                 ))
+    //             }
+    //         },
+    //         KW_END => match current_contex {
+    //             MainParserContex::ReadingStructBody => {
+    //                 current_struct_name = String::new();
+    //                 current_contex = MainParserContex::WaitingProcOrStructKW;
+    //             }
 
-                MainParserContex::ReadingProcedureBody => {
-                    current_proc_name = String::new();
+    //             MainParserContex::ReadingProcedureBody => {
+    //                 current_proc_name = String::new();
 
-                    current_contex = MainParserContex::WaitingProcOrStructKW;
-                }
+    //                 current_contex = MainParserContex::WaitingProcOrStructKW;
+    //             }
 
-                _ => {
-                    return Err(AbisError::InvalidKeyWordInCurrentContext(
-                        token,
-                        current_contex,
-                    ))
-                }
-            },
-            KW_PROC => match current_contex {
-                MainParserContex::WaitingProcOrStructKW => {
-                    current_contex = MainParserContex::ExpectingProcName;
-                }
-                _ => {
-                    return Err(AbisError::InvalidKeyWordInCurrentContext(
-                        token,
-                        current_contex,
-                    ))
-                }
-            },
+    //             _ => {
+    //                 return Err(AbisError::InvalidKeyWordInCurrentContext(
+    //                     token,
+    //                     current_contex,
+    //                 ))
+    //             }
+    //         },
+    //         KW_PROC => match current_contex {
+    //             MainParserContex::WaitingProcOrStructKW => {
+    //                 current_contex = MainParserContex::ExpectingProcName;
+    //             }
+    //             _ => {
+    //                 return Err(AbisError::InvalidKeyWordInCurrentContext(
+    //                     token,
+    //                     current_contex,
+    //                 ))
+    //             }
+    //         },
 
-            KW_IN => match current_contex {
-                MainParserContex::ExpectingIsOrInOrOutKW => {
-                    proc_map_to_parse.get_mut(&current_proc_name).unwrap().1 = Some(Vec::new());
+    //         KW_IN => match current_contex {
+    //             MainParserContex::ExpectingIsOrInOrOutKW => {
+    //                 proc_map_to_parse.get_mut(&current_proc_name).unwrap().1 = Some(Vec::new());
 
-                    current_contex = MainParserContex::ReadingProcedureInputFields;
-                }
-                _ => {
-                    return Err(AbisError::InvalidKeyWordInCurrentContext(
-                        token,
-                        current_contex,
-                    ))
-                }
-            },
+    //                 current_contex = MainParserContex::ReadingProcedureInputFields;
+    //             }
+    //             _ => {
+    //                 return Err(AbisError::InvalidKeyWordInCurrentContext(
+    //                     token,
+    //                     current_contex,
+    //                 ))
+    //             }
+    //         },
 
-            KW_OUT => match current_contex {
-                MainParserContex::ReadingProcedureInputFields
-                | MainParserContex::ExpectingIsOrInOrOutKW => {
-                    current_contex = MainParserContex::ExpectingOutputType;
-                }
-                _ => {
-                    return Err(AbisError::InvalidKeyWordInCurrentContext(
-                        token,
-                        current_contex,
-                    ))
-                }
-            },
+    //         KW_OUT => match current_contex {
+    //             MainParserContex::ReadingProcedureInputFields
+    //             | MainParserContex::ExpectingIsOrInOrOutKW => {
+    //                 current_contex = MainParserContex::ExpectingOutputType;
+    //             }
+    //             _ => {
+    //                 return Err(AbisError::InvalidKeyWordInCurrentContext(
+    //                     token,
+    //                     current_contex,
+    //                 ))
+    //             }
+    //         },
 
-            KW_IS => match current_contex {
-                MainParserContex::ExpectingProcIsKW
-                | MainParserContex::ExpectingIsOrInOrOutKW
-                | MainParserContex::ReadingProcedureInputFields => {
-                    current_contex = MainParserContex::ReadingProcedureBody;
-                }
-                MainParserContex::ExpectingStructIsKW => {
-                    current_contex = MainParserContex::ReadingStructBody;
-                }
-                _ => {
-                    return Err(AbisError::InvalidKeyWordInCurrentContext(
-                        token,
-                        current_contex,
-                    ))
-                }
-            },
+    //         KW_IS => match current_contex {
+    //             MainParserContex::ExpectingProcIsKW
+    //             | MainParserContex::ExpectingIsOrInOrOutKW
+    //             | MainParserContex::ReadingProcedureInputFields => {
+    //                 current_contex = MainParserContex::ReadingProcedureBody;
+    //             }
+    //             MainParserContex::ExpectingStructIsKW => {
+    //                 current_contex = MainParserContex::ReadingStructBody;
+    //             }
+    //             _ => {
+    //                 return Err(AbisError::InvalidKeyWordInCurrentContext(
+    //                     token,
+    //                     current_contex,
+    //                 ))
+    //             }
+    //         },
 
-            _ => match current_contex {
-                MainParserContex::WaitingProcOrStructKW => {
-                    return Err(AbisError::ExpectedStructOrProcKWs(token));
-                }
+    //         _ => match current_contex {
+    //             MainParserContex::WaitingProcOrStructKW => {
+    //                 return Err(AbisError::ExpectedStructOrProcKWs(token));
+    //             }
 
-                MainParserContex::ExpectingStructName => {
-                    if struct_map_to_parse.contains_key(&word.to_string()) {
-                        return Err(AbisError::DuplicateStructName(token));
-                    }
-                    if contains_special_characters(&word) {
-                        return Err(AbisError::ErrorParsingStruct(
-                            ParseStructError::StructNameCanNotContainSpecialCharacters(token),
-                        ));
-                    }
+    //             MainParserContex::ExpectingStructName => {
+    //                 if struct_map_to_parse.contains_key(&word.to_string()) {
+    //                     return Err(AbisError::DuplicateStructName(token));
+    //                 }
+    //                 if contains_special_characters(&word) {
+    //                     return Err(AbisError::ErrorParsingStruct(
+    //                         ParseStructError::StructNameCanNotContainSpecialCharacters(token),
+    //                     ));
+    //                 }
 
-                    current_struct_name = word.to_string();
+    //                 current_struct_name = word.to_string();
 
-                    struct_map_to_parse.insert(current_struct_name.clone(), vec![token]);
+    //                 struct_map_to_parse.insert(current_struct_name.clone(), vec![token]);
 
-                    current_contex = MainParserContex::ExpectingStructIsKW;
-                }
+    //                 current_contex = MainParserContex::ExpectingStructIsKW;
+    //             }
 
-                MainParserContex::ReadingStructBody => {
-                    assert!(struct_map_to_parse.contains_key(&current_struct_name));
-                    (*struct_map_to_parse.get_mut(&current_struct_name).unwrap()).push(token);
+    //             MainParserContex::ReadingStructBody => {
+    //                 assert!(struct_map_to_parse.contains_key(&current_struct_name));
+    //                 (*struct_map_to_parse.get_mut(&current_struct_name).unwrap()).push(token);
 
-                    //current_contex = Contex::ReadingStructBody;
-                }
+    //                 //current_contex = Contex::ReadingStructBody;
+    //             }
 
-                //Procedures parsing--------------------------------------------------
-                MainParserContex::ExpectingProcName => {
-                    if proc_map_to_parse.contains_key(&word.to_string()) {
-                        return Err(AbisError::DuplicateProcedureName(token));
-                    }
-                    if contains_special_characters(&word) {
-                        return Err(AbisError::ErrorParsingProcedure(
-                            ParseProcError::ProcedureNameCanNotContainSpecialCharacters(token),
-                        ));
-                    }
+    //             //Procedures parsing--------------------------------------------------
+    //             MainParserContex::ExpectingProcName => {
+    //                 if proc_map_to_parse.contains_key(&word.to_string()) {
+    //                     return Err(AbisError::DuplicateProcedureName(token));
+    //                 }
+    //                 if contains_special_characters(&word) {
+    //                     return Err(AbisError::ErrorParsingProcedure(
+    //                         ParseProcError::ProcedureNameCanNotContainSpecialCharacters(token),
+    //                     ));
+    //                 }
 
-                    current_proc_name = word.to_string();
+    //                 current_proc_name = word.to_string();
 
-                    proc_map_to_parse.insert(current_proc_name.clone(), (vec![token], None, None));
+    //                 proc_map_to_parse.insert(current_proc_name.clone(), (vec![token], None, None));
 
-                    current_contex = MainParserContex::ExpectingIsOrInOrOutKW;
-                }
+    //                 current_contex = MainParserContex::ExpectingIsOrInOrOutKW;
+    //             }
 
-                //Contex::WaitingProcKW => continue,
-                MainParserContex::ExpectingIsOrInOrOutKW => {
-                    return Err(AbisError::ExpectedIsOrInOrOutKW(token));
-                }
+    //             //Contex::WaitingProcKW => continue,
+    //             MainParserContex::ExpectingIsOrInOrOutKW => {
+    //                 return Err(AbisError::ExpectedIsOrInOrOutKW(token));
+    //             }
 
-                MainParserContex::ExpectingProcIsKW | MainParserContex::ExpectingStructIsKW => {
-                    return Err(AbisError::ExpectingIsKeyWord(token));
-                }
+    //             MainParserContex::ExpectingProcIsKW | MainParserContex::ExpectingStructIsKW => {
+    //                 return Err(AbisError::ExpectingIsKeyWord(token));
+    //             }
 
-                MainParserContex::ReadingProcedureInputFields => {
-                    //This is "almost" equal to proc_map_to_parse[&current_proc_name].1.push(token);
-                    proc_map_to_parse
-                        .get_mut(&current_proc_name)
-                        .unwrap()
-                        .1
-                        .as_mut()
-                        .unwrap()
-                        .push(token);
-                }
-                MainParserContex::ExpectingOutputType => {
-                    proc_map_to_parse.get_mut(&current_proc_name).unwrap().2 = Some(token);
-                    current_contex = MainParserContex::ExpectingProcIsKW;
-                }
-                MainParserContex::ReadingProcedureBody => {
-                    proc_map_to_parse
-                        .get_mut(&current_proc_name)
-                        .unwrap()
-                        .0
-                        .push(token);
-                }
-            },
-        }
-    }
+    //             MainParserContex::ReadingProcedureInputFields => {
+    //                 //This is "almost" equal to proc_map_to_parse[&current_proc_name].1.push(token);
+    //                 proc_map_to_parse
+    //                     .get_mut(&current_proc_name)
+    //                     .unwrap()
+    //                     .1
+    //                     .as_mut()
+    //                     .unwrap()
+    //                     .push(token);
+    //             }
+    //             MainParserContex::ExpectingOutputType => {
+    //                 proc_map_to_parse.get_mut(&current_proc_name).unwrap().2 = Some(token);
+    //                 current_contex = MainParserContex::ExpectingProcIsKW;
+    //             }
+    //             MainParserContex::ReadingProcedureBody => {
+    //                 proc_map_to_parse
+    //                     .get_mut(&current_proc_name)
+    //                     .unwrap()
+    //                     .0
+    //                     .push(token);
+    //             }
+    //         },
+    //     }
+    // }
 
-    // Parses all the structs
-    for (k, v) in struct_map_to_parse.clone() {
-        let s = parse_struct(&struct_map_to_parse, v);
-        match s {
-            Ok(x) => {
-                struct_map.insert(k, x);
-            }
-            Err(e) => return Err(AbisError::ErrorParsingStruct(e)),
-        }
-    }
+    // // Parses all the structs
+    // for (k, v) in struct_map_to_parse.clone() {
+    //     let s = parse_struct(&struct_map_to_parse, v);
+    //     match s {
+    //         Ok(x) => {
+    //             struct_map.insert(k, x);
+    //         }
+    //         Err(e) => return Err(AbisError::ErrorParsingStruct(e)),
+    //     }
+    // }
 
-    for (k, (body, input, output)) in proc_map_to_parse.clone() {
-        let s = parse_proc(body, input, output, &struct_map, action_map);
-        match s {
-            Ok(x) => {
-                proc_map.insert(k, x);
-            }
-            Err(e) => return Err(AbisError::ErrorParsingProcedure(e)),
-        }
-    }
+    // for (k, (body, input, output)) in proc_map_to_parse.clone() {
+    //     let s = parse_proc(body, input, output, &struct_map, action_map);
+    //     match s {
+    //         Ok(x) => {
+    //             proc_map.insert(k, x);
+    //         }
+    //         Err(e) => return Err(AbisError::ErrorParsingProcedure(e)),
+    //     }
+    // }
 
-    return Ok((struct_map, proc_map));
+    // return Ok((struct_map, proc_map));
 }
 
 fn parse_struct(
@@ -323,58 +324,59 @@ fn parse_proc(
     output_type: Option<Token>,
     structs: &StructMap,
     action_map: &HashMap<String, ActionDef>,
-) -> Result<Program, ParseProcError> {
-    assert!(body.len() > 2);
-    let proc_name = body[0].word.clone();
-    let input_vars_and_types: Option<HashMap<Name, Type>> = match input_vars {
-        Some(tokens) => {
-            assert!(tokens.len() % 2 == 0);
-            let mut map: HashMap<Name, Type> = HashMap::new();
-            let mut i = 0;
-            while i < tokens.len() {
-                let typee = tokens[i].word.clone();
-                let name = tokens[i + 1].word.clone();
+) -> Result<Program, ParseError> {
+    unimplemented!()
+    // assert!(body.len() > 2);
+    // let proc_name = body[0].word.clone();
+    // let input_vars_and_types: Option<HashMap<Name, Type>> = match input_vars {
+    //     Some(tokens) => {
+    //         assert!(tokens.len() % 2 == 0);
+    //         let mut map: HashMap<Name, Type> = HashMap::new();
+    //         let mut i = 0;
+    //         while i < tokens.len() {
+    //             let typee = tokens[i].word.clone();
+    //             let name = tokens[i + 1].word.clone();
 
-                if is_basic_type(&typee) || structs.contains_key(&typee) {
-                    if map.contains_key(&name) {
-                        return Err(ParseProcError::DuplicateFieldName(tokens[i].clone()));
-                    }
-                    map.insert(name, typee);
-                } else {
-                    return Err(ParseProcError::FieldTypeNotDefined(tokens[i].clone()));
-                }
+    //             if is_basic_type(&typee) || structs.contains_key(&typee) {
+    //                 if map.contains_key(&name) {
+    //                     return Err(ParseProcError::DuplicateFieldName(tokens[i].clone()));
+    //                 }
+    //                 map.insert(name, typee);
+    //             } else {
+    //                 return Err(ParseProcError::FieldTypeNotDefined(tokens[i].clone()));
+    //             }
 
-                i += 2;
-            }
-            Some(map)
-        }
-        None => None,
-    };
+    //             i += 2;
+    //         }
+    //         Some(map)
+    //     }
+    //     None => None,
+    // };
 
-    let output_type: Option<Type> = if let Some(t) = output_type {
-        if is_basic_type(&t.word) || structs.contains_key(&t.word) {
-            Some(t.word)
-        } else {
-            return Err(ParseProcError::OutputTypeNotDefined(t));
-        }
-    } else {
-        None
-    };
+    // let output_type: Option<Type> = if let Some(t) = output_type {
+    //     if is_basic_type(&t.word) || structs.contains_key(&t.word) {
+    //         Some(t.word)
+    //     } else {
+    //         return Err(ParseProcError::OutputTypeNotDefined(t));
+    //     }
+    // } else {
+    //     None
+    // };
 
-    let (action_vec, flag_map) = parse_proc_body(body, structs, action_map)?;
+    // let (action_vec, flag_map) = parse_proc_body(body, structs, action_map)?;
 
-    let new_proc = Program::new(proc_name, action_vec, flag_map);
+    // let new_proc = Program::new(action_vec, flag_map);
 
-    return Ok(new_proc);
+    // return Ok(new_proc);
 }
 
-fn parse_proc_body(
-    body: Vec<Token>,
-    _map: &StructMap,
+// The previous name of this fn was parse_proc_body
+fn parse_tokens(
+    tokens: Vec<Token>,
     action_map: &HashMap<String, ActionDef>,
-) -> Result<(Vec<Action>, FlagMap), ParseProcError> {
+) -> Result<(Vec<Action>, FlagMap), ParseError> {
     //removes first token because is the name of the procedure.
-    let mut body = body;
+    let mut body = tokens;
     body.remove(0);
 
     let mut action_vec = Vec::new();
@@ -397,7 +399,7 @@ fn parse_proc_body(
                     flag_map.insert(flag, action_counter);
                 } else {
                     if !action_map.contains_key(&word) {
-                        return Err(ParseProcError::UnknownAction(token));
+                        return Err(ParseError::UnknownAction(token));
                     }
 
                     current_action_name = word.clone();
@@ -407,7 +409,7 @@ fn parse_proc_body(
             }
             Context::ReadingActionArgs => {
                 if action_map.contains_key(&word) {
-                    return Err(ParseProcError::ExpectedParamFoundAction(token));
+                    return Err(ParseError::ExpectedParamFoundAction(token));
                 }
                 current_action_params.push(word);
                 current_action_param_counter -= 1;

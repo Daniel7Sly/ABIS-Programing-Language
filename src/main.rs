@@ -11,7 +11,9 @@ fn main() -> Result<(), AbisError> {
 
     let script = fs::read_to_string("test.abis").expect("Unable to read file!");
 
-    interpreter.load_script(script)?;
+    interpreter
+        .load_script(script)
+        .expect("Error Loading Script!");
 
     interpreter.run_scripts()?;
     Ok(())
