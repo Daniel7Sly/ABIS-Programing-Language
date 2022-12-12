@@ -263,7 +263,7 @@ fn _parser(
     // return Ok((struct_map, proc_map));
 }
 
-fn parse_struct(
+fn _parse_struct(
     structs_to_parse_map: &HashMap<Name, Vec<Token>>,
     fields: Vec<Token>,
 ) -> Result<Struct, ParseStructError> {
@@ -318,7 +318,7 @@ fn parse_struct(
     Ok(new_struct)
 }
 
-fn parse_proc(
+fn _parse_proc(
     body: Vec<Token>,
     input_vars: Option<Vec<Token>>,
     output_type: Option<Token>,
@@ -375,9 +375,7 @@ fn parse_tokens(
     tokens: Vec<Token>,
     action_map: &HashMap<String, ActionDef>,
 ) -> Result<(Vec<Action>, FlagMap), ParseError> {
-    //removes first token because is the name of the procedure.
-    let mut body = tokens;
-    body.remove(0);
+    let body = tokens;
 
     let mut action_vec = Vec::new();
     let mut flag_map: HashMap<String, usize> = HashMap::new();

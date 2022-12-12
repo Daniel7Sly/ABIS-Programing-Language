@@ -247,7 +247,7 @@ pub struct Program {
     value_stack: Vec<Value>,
 
     flag_map: FlagMap,
-    actions: Vec<Action>,
+    program_actions: Vec<Action>,
 
     var_map: VariableMap,
     struct_map: StructMap,
@@ -258,7 +258,7 @@ pub struct Program {
 impl Program {
     fn new(action_vec: Vec<Action>, flag_map: FlagMap) -> Self {
         Self {
-            actions: action_vec,
+            program_actions: action_vec,
             flag_map,
             var_map: VariableMap::new(),
             struct_map: StructMap::new(),
@@ -282,7 +282,9 @@ impl Program {
 
     /// Returns a clone of the raw parameters
     fn get_raw_parameters(&self) -> Vec<String> {
-        self.actions[self.current_action_index].parameters.clone()
+        self.program_actions[self.current_action_index]
+            .parameters
+            .clone()
     }
 
     /// Gets the value of the given parameter. A parameter can be a string, number, boolean, variable
@@ -333,8 +335,36 @@ impl Program {
         self.var_map.insert(name, value);
     }
 
-    pub fn run_program(&mut self, actions_def: &HashMap<String, ActionDef>) {
-        todo!()
+    pub fn run_program(
+        &mut self,
+        actions_def: &HashMap<String, ActionDef>,
+    ) -> Result<(), AbisError> {
+        println!("{:#?}", self);
+
+        if !self.flag_map.contains_key("@main") {
+            return Err(AbisError::MainFlagNotFound);
+        }
+
+        self.current_action_index = self.flag_map["@main"];
+        self.call_stack.push(self.current_action_index);
+
+        // Main Loop
+        while self.call_stack.len() > 0 {
+            let i = self.current_action_index;
+            self.next_action_index = i + 1;
+
+            // Gets the current action to execute
+            let action = self.program_actions[i].clone();
+
+            // Executes the action
+            (actions_def[&action.name].method)(self);
+
+            self.current_action_index = self.next_action_index;
+        }
+
+        print!("Emem");
+
+        Ok(())
     }
 }
 
@@ -364,6 +394,7 @@ impl Interpreter {
     /// The String should contain all the text of a .abis file.
     pub fn load_script(&mut self, script: String) -> Result<(), ParseError> {
         let (actions, flags) = parse_script(script, &self.action_def_map)?;
+        println!("{:#?}", flags);
         if let Some(program) = &mut self.program {
             todo!("adding more than one script is not implemented yet!");
         } else {
@@ -375,7 +406,7 @@ impl Interpreter {
     /// Runs the current loaded script.
     pub fn run_scripts(&mut self) -> Result<(), AbisError> {
         if let Some(prog) = &mut self.program {
-            prog.run_program(&self.action_def_map);
+            prog.run_program(&self.action_def_map)?;
             Ok(())
         } else {
             Err(AbisError::NoLoadedScript)
@@ -386,7 +417,7 @@ impl Interpreter {
 #[derive(Debug, PartialEq)]
 pub enum AbisError {
     NoLoadedScript,
-    MainProcedureNotFound,
+    MainFlagNotFound,
     TypeNotDefined(Token),
     StringDeclarationWithoutEnding(Token),
     InvalidBlockStructure(Token),
