@@ -1,3 +1,23 @@
 @main:
-    println "This is the main flag."
+    arg     10
+    arg     20
+    mul     @ @
+
+    println @
+
+    fre     $A
+
+
     rtn _
+
+@Square:
+    var numb x
+    giv $x @
+
+    mul $x $x
+
+    rtn $x
+
+
+
+

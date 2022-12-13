@@ -1,7 +1,5 @@
 
 
 Actions:
-    psh
-
-Update:
-    get_value to suport @
+    str
+    stf

@@ -7,7 +7,7 @@ use crate::{
 
 pub(super) const ACTION_VAR: &str = "var";
 pub(super) const ACTION_VAR_ARGS: &[&str] = &[TYPE_TYPE, TYPE_NEUTRAL];
-///Creates a new variable to the procedure
+/// Creates a new variable
 pub(super) fn var(program: &mut Program) {
     let parameters: Vec<String> = program.get_raw_parameters();
 
@@ -17,6 +17,19 @@ pub(super) fn var(program: &mut Program) {
     let typee = parameters[0].clone();
 
     program.add_new_variable(name, typee);
+}
+
+pub(super) const ACTION_FRE: &str = "fre";
+pub(super) const ACTION_FRE_ARGS: &[&str] = &[TYPE_VAR];
+/// Frees the given variable
+pub(super) fn fre(program: &mut Program) {
+    let parameters: Vec<String> = program.get_raw_parameters();
+
+    assert!(parameters.len() == ACTION_FRE_ARGS.len());
+
+    let var_to_remove = &parameters[0].clone().trim_matches('$').to_string();
+
+    program.var_map.remove(var_to_remove);
 }
 
 pub(super) const ACTION_GIV: &str = "giv";
@@ -121,7 +134,7 @@ pub(super) const ACTION_IFF_ARGS: &[&str] = &[TYPE_BOOL, TYPE_FLAG];
 pub(super) fn iff(program: &mut Program) {
     let parameters: Vec<String> = program.get_raw_parameters();
 
-    assert!(parameters.len() == 2);
+    assert!(parameters.len() == ACTION_IFF_ARGS.len());
 
     let param1 = program.get_value(&parameters[0]);
 
@@ -141,7 +154,7 @@ pub(super) const ACTION_RND_ARGS: &[&str] = &[TYPE_VAR_NUMB];
 pub(super) fn rnd(program: &mut Program) {
     let parameters: Vec<String> = program.get_raw_parameters();
 
-    assert!(parameters.len() == 1);
+    assert!(parameters.len() == ACTION_RND_ARGS.len());
 
     let param1 = program.get_variable_value_mutref(&parameters[0]);
 

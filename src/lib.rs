@@ -58,6 +58,7 @@ impl Value {
         };
         value
     }
+
     ///Returns the type of the value.
     pub fn typee(&self) -> &str {
         match self {
@@ -126,26 +127,9 @@ impl Value {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct Value {
-//     typee: String,
-//     pub value: ValueForm,
-// }
-
-// impl Value {
-//     fn new(typee: &str) -> Self {
-//         let value_form: ValueForm = match typee {
-//             TYPE_TEXT => ValueForm::NormalText(DEF_TEXT_VALUE),
-//             TYPE_NUMB => ValueForm::NormalNumb(DEF_NUMB_VALUE),
-//             TYPE_BOOL => ValueForm::NormalBool(DEF_BOOL_VALUE),
-//             _ => todo!("creation of new values of structs/arrays, are not implemented yet!"),
-//         };
-//         Value {
-//             typee: typee.to_string(),
-//             value: value_form,
-//         }
-//     }
-// }
+fn get_default_value_of_type(typee: &str) -> Value {
+    todo!()
+}
 
 #[derive(Clone)]
 pub struct ActionDef {
@@ -269,7 +253,7 @@ impl Program {
         }
     }
 
-    pub fn get_parameters_values(&self) -> Vec<Value> {
+    pub fn get_parameters_values(&mut self) -> Vec<Value> {
         let parameters = self.get_raw_parameters();
         let mut param_values: Vec<Value> = Vec::new();
 
@@ -288,18 +272,17 @@ impl Program {
     }
 
     /// Gets the value of the given parameter. A parameter can be a string, number, boolean, variable
-    fn get_value(&self, param: &String) -> Value {
+    fn get_value(&mut self, param: &String) -> Value {
         if param.starts_with("$") {
             let var_name = param.trim_start_matches('$').to_string();
             assert!(self.var_map.contains_key(&var_name));
 
             self.var_map[&var_name].clone()
-        }
-        // else if param.starts_with('@') {
-        //     let proc_name = param.trim_start_matches('@');
-        //     interpreter.proc_map[proc_name].run_proc(input_values, actions_def)
-        // }
-        else if param.starts_with('\"') {
+        } else if param == "@" {
+            self.value_stack
+                .pop()
+                .expect("attempted to pop value_stack while empty!")
+        } else if param.starts_with('\"') {
             Value::Text(param.trim_matches('\"').to_string())
         } else if let Some(boolean) = param.parse::<bool>().ok() {
             Value::Bool(boolean)
@@ -339,7 +322,7 @@ impl Program {
         &mut self,
         actions_def: &HashMap<String, ActionDef>,
     ) -> Result<(), AbisError> {
-        println!("{:#?}", self);
+        //println!("{:#?}", self);
 
         if !self.flag_map.contains_key("@main") {
             return Err(AbisError::MainFlagNotFound);
@@ -362,7 +345,7 @@ impl Program {
             self.current_action_index = self.next_action_index;
         }
 
-        print!("Emem");
+        //print!("Emem");
 
         Ok(())
     }
@@ -394,7 +377,7 @@ impl Interpreter {
     /// The String should contain all the text of a .abis file.
     pub fn load_script(&mut self, script: String) -> Result<(), ParseError> {
         let (actions, flags) = parse_script(script, &self.action_def_map)?;
-        println!("{:#?}", flags);
+        //println!("{:#?}", flags);
         if let Some(program) = &mut self.program {
             todo!("adding more than one script is not implemented yet!");
         } else {

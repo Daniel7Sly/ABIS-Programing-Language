@@ -33,6 +33,14 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
             parameters_types: base_actions::ACTION_VAR_ARGS,
         },
     );
+    // FRE
+    map.insert(
+        base_actions::ACTION_FRE.to_string(),
+        ActionDef {
+            method: base_actions::fre,
+            parameters_types: base_actions::ACTION_FRE_ARGS,
+        },
+    );
     // GIV
     map.insert(
         base_actions::ACTION_GIV.to_string(),
@@ -228,6 +236,15 @@ pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
         ActionDef {
             method: arrays_actions::arl,
             parameters_types: arrays_actions::ACTION_ARL_ARGS,
+        },
+    );
+
+    // push
+    map.insert(
+        arrays_actions::ACTION_ARP.to_string(),
+        ActionDef {
+            method: arrays_actions::arp,
+            parameters_types: arrays_actions::ACTION_ARP_ARGS,
         },
     );
 

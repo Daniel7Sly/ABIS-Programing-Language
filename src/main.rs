@@ -4,7 +4,6 @@ use abis::{AbisError, ActionDef, Interpreter, Program, TYPE_TEXT};
 
 fn main() -> Result<(), AbisError> {
     let mut interpreter = Interpreter::new();
-
     //TODO: Interpreter should have a single method to add actions, load the script, and run at the same time.
 
     interpreter.add_action(ACTION_PRINTLN, ActionDef::new(println, ACTION_PRINTLN_ARGS));
