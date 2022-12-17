@@ -1,7 +1,7 @@
 mod parser;
 mod std_actions;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 use parser::{parse_script, MainParserContex};
 
@@ -90,6 +90,10 @@ impl Value {
             _ => panic!("atempted to get NormalBool valueForm without being NormalBool"),
         }
     }
+    ///Returns a clone of the value contained.
+    pub fn get_pure_value(&self) -> Value {
+        self.clone()
+    }
 
     pub fn is_text(&self) -> bool {
         match self {
@@ -123,6 +127,18 @@ impl Value {
         match self {
             Value::Struct(_, _) => true,
             _ => false,
+        }
+    }
+}
+
+impl Display for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self{
+            Value::Numb(v) => write!(f, "{}", v),
+            Value::Bool(v) => write!(f, "{}", v),
+            Value::Text(v) => write!(f, "{}", v),
+            Value::Array(t, a) => write!(f, "type: {} \n vec: {:?}", t, a),
+            Value::Struct(t, m) => write!(f, "type: {} \nmap: {:?}", t, m),
         }
     }
 }

@@ -56,7 +56,7 @@ pub(super) fn arl(current_proc: &mut Program) {
 
 pub(super) const ACTION_ARP: &str = "arp";
 pub(super) const ACTION_ARP_ARGS: &[&str] = &[TYPE_VAR_ARRAY, TYPE_NEUTRAL];
-/// Returns the Length of the array.
+/// Pushes an value to the array.
 pub(super) fn arp(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 

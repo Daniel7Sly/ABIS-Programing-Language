@@ -2,10 +2,10 @@ proc main is
     # Creates the initial state
     var #numb state
     # 1 means alive, 0 means dead
-    psh $state 1 psh $state 0 psh $state 0 psh $state 0 psh $state 0
-    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
-    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
-    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
+    arp $state 1 arp $state 0 arp $state 0 arp $state 0 arp $state 0
+    arp $state 0 arp $state 0 arp $state 0 arp $state 0 arp $state 0
+    arp $state 0 arp $state 0 arp $state 0 arp $state 0 arp $state 0
+    arp $state 0 arp $state 0 arp $state 0 arp $state 0 arp $state 0
 
     var numb count
     var bool cmp
@@ -146,10 +146,10 @@ cst numb STATE_SIZE 20
     # Creates the initial state
     var #numb state
     # 1 means alive, 0 means dead
-    psh $state 1 psh $state 0 psh $state 0 psh $state 0 psh $state 0
-    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
-    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
-    psh $state 0 psh $state 0 psh $state 0 psh $state 0 psh $state 0
+    arp $state 1 arp $state 0 arp $state 0 arp $state 0 arp $state 0
+    arp $state 0 arp $state 0 arp $state 0 arp $state 0 arp $state 0
+    arp $state 0 arp $state 0 arp $state 0 arp $state 0 arp $state 0
+    arp $state 0 arp $state 0 arp $state 0 arp $state 0 arp $state 0
 
     var numb count
     var bool cmp

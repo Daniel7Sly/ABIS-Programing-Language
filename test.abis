@@ -1,22 +1,15 @@
 @main:
-    arg     10
-    arg     20
-    mul     @ @
+    var     #numb array
+    
+    arp     $array 1
+    arp     $array 2
+    arp     $array 3
+    arp     $array 4
+    
+    println $array
 
-    println @
+    rtn     _
 
-    fre     $A
-
-
-    rtn _
-
-@Square:
-    var numb x
-    giv $x @
-
-    mul $x $x
-
-    rtn $x
 
 
 
