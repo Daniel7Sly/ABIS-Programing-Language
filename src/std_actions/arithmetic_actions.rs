@@ -9,8 +9,8 @@ pub(super) fn add(current_proc: &mut Program) {
 
     assert!(parameters.len() == 2);
 
+    let param1 = current_proc.get_value(&parameters[0]);
     let param2 = current_proc.get_value(&parameters[1]);
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
 
     assert!(param1.typee() == TYPE_NUMB && param1.is_numb());
     assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
@@ -20,7 +20,7 @@ pub(super) fn add(current_proc: &mut Program) {
 
     let rslt = numb1 + numb2;
 
-    *param1 = Value::Numb(rslt);
+    current_proc.value_stack.push(Value::Numb(rslt));
 }
 
 pub(super) const ACTION_SUB: &str = "sub";
@@ -31,7 +31,7 @@ pub(super) fn sub(current_proc: &mut Program) {
     assert!(parameters.len() == 2);
 
     let param2 = current_proc.get_value(&parameters[1]);
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
+    let param1 = current_proc.get_value(&parameters[0]);
 
     assert!(param1.typee() == TYPE_NUMB && param1.is_numb());
     assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
@@ -40,8 +40,8 @@ pub(super) fn sub(current_proc: &mut Program) {
     let numb2 = param2.get_numb_value();
 
     let rslt = numb1 - numb2;
+    current_proc.value_stack.push(Value::Numb(rslt));
 
-    *param1 = Value::Numb(rslt);
 }
 
 pub(super) const ACTION_MUL: &str = "mul";
@@ -52,7 +52,7 @@ pub(super) fn mul(current_proc: &mut Program) {
     assert!(parameters.len() == 2);
 
     let param2 = current_proc.get_value(&parameters[1]);
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
+    let param1 = current_proc.get_value(&parameters[0]);
 
     assert!(param1.typee() == TYPE_NUMB && param1.is_numb());
     assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
@@ -61,8 +61,8 @@ pub(super) fn mul(current_proc: &mut Program) {
     let numb2 = param2.get_numb_value();
 
     let rslt = numb1 * numb2;
+    current_proc.value_stack.push(Value::Numb(rslt));
 
-    *param1 = Value::Numb(rslt);
 }
 
 pub(super) const ACTION_DIV: &str = "div";
@@ -73,7 +73,7 @@ pub(super) fn div(current_proc: &mut Program) {
     assert!(parameters.len() == 2);
 
     let param2 = current_proc.get_value(&parameters[1]);
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
+    let param1 = current_proc.get_value(&parameters[0]);
 
     assert!(param1.typee() == TYPE_NUMB && param1.is_numb());
     assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
@@ -82,8 +82,8 @@ pub(super) fn div(current_proc: &mut Program) {
     let numb2 = param2.get_numb_value();
 
     let rslt = numb1 / numb2;
+    current_proc.value_stack.push(Value::Numb(rslt));
 
-    *param1 = Value::Numb(rslt);
 }
 
 pub(super) const ACTION_MOD: &str = "mod";
@@ -94,7 +94,7 @@ pub(super) fn mod_(current_proc: &mut Program) {
     assert!(parameters.len() == 2);
 
     let param2 = current_proc.get_value(&parameters[1]);
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
+    let param1 = current_proc.get_value(&parameters[0]);
 
     assert!(param1.typee() == TYPE_NUMB && param1.is_numb());
     assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
@@ -104,5 +104,5 @@ pub(super) fn mod_(current_proc: &mut Program) {
 
     let rslt = numb1 % numb2;
 
-    *param1 = Value::Numb(rslt);
+    current_proc.value_stack.push(Value::Numb(rslt));
 }
