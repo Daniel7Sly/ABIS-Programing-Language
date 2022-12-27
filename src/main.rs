@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, fmt::Display};
 
 use abis::{AbisError, ActionDef, Interpreter, Program, TYPE_TEXT};
 
@@ -25,15 +25,6 @@ fn println(current_proc: &mut Program) {
 
     assert!(parameters.len() == 1);
 
-    let value = &parameters[0];
-    if value.is_text() {
-        let text = parameters[0].get_text_value();
-        println!("{}", text);
-    } else if value.is_numb() {
-        let text = parameters[0].get_numb_value();
-        println!("{}", text);
-    } else if value.is_bool() {
-        let text = parameters[0].get_bool_value();
-        println!("{}", text);
-    }
+    let text = parameters[0].get_pure_value().to_string();
+    println!("{}", text);
 }
