@@ -31,7 +31,8 @@ const DEF_TEXT_VALUE: String = String::new();
 const DEF_NUMB_VALUE: f64 = 0.0;
 const DEF_BOOL_VALUE: bool = false;
 
-//static mut action_map: HashMap<String, fn(&mut Procedure)> = HashMap::new();
+/// The symbol used in code to interact with the value stack
+const VALUE_STACK_SYMBOL: &str = "@";
 
 #[derive(Debug, Clone)]
 pub enum Value {
@@ -278,10 +279,10 @@ impl Program {
             assert!(self.var_map.contains_key(&var_name));
 
             self.var_map[&var_name].clone()
-        } else if param == "@" {
+        } else if param == VALUE_STACK_SYMBOL {
             self.value_stack
                 .pop()
-                .expect("attempted to pop value_stack while empty!")
+                .expect("ERROR: attempted to pop value_stack while empty!")
         } else if param.starts_with('\"') {
             Value::Text(param.trim_matches('\"').to_string())
         } else if let Some(boolean) = param.parse::<bool>().ok() {
@@ -289,12 +290,20 @@ impl Program {
         } else if let Some(number) = param.parse::<f64>().ok() {
             Value::Numb(number)
         } else {
-            unreachable!("param was not of the expecting values. It must be some error in the error_checker.rs.")
+            unreachable!("ERROR: param was not of the expecting values. {} It must be some error in the error_checker.", param)
         }
     }
 
     /// Returns a mutable reference of the value of the variable found by the param
     fn get_variable_value_mutref<'a>(&'a mut self, param: &String) -> &'a mut Value {
+        if param == VALUE_STACK_SYMBOL {
+            unimplemented!("Peeking values in the stack is not implemented and may not be.");
+            // return self
+            //     .value_stack
+            //     .last_mut()
+            //     .expect("ERROR: Attempted to peek value_stack while empty.");
+        }
+
         assert!(param.starts_with('$'));
 
         let k = param.trim_matches('$');
@@ -307,7 +316,10 @@ impl Program {
     }
 
     fn add_new_variable(&mut self, name: String, typee: String) {
-        assert!(!self.var_map.0.contains_key(&name),);
+        assert!(
+            !self.var_map.0.contains_key(&name),
+            "Attempet to created variable with duplicated name."
+        );
         let value = Value::new(&typee);
         self.var_map.insert(name, value);
     }
@@ -378,7 +390,7 @@ impl Interpreter {
     pub fn load_script(&mut self, script: String) -> Result<(), ParseError> {
         let (actions, flags) = parse_script(script, &self.action_def_map)?;
         //println!("{:#?}", flags);
-        if let Some(program) = &mut self.program {
+        if let Some(_program) = &mut self.program {
             todo!("adding more than one script is not implemented yet!");
         } else {
             self.program = Some(Program::new(actions, flags));

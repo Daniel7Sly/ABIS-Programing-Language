@@ -1,12 +1,9 @@
 @main:
-    arg     10
-    arg     20
-    mul     @ @
-
+    arg     2
+    arg     7
+    
+    exe     @Power
     println @
-
-    fre     $A
-
 
     rtn _
 
@@ -16,8 +13,34 @@
 
     mul $x $x
 
-    rtn $x
+    arg @
+    fre $x
+    rtn @
 
+@Power:
+    var numb base giv $base @
+    var numb expo giv $expo @
+    println "#"
+    smt $expo 1
+    ift @ PowerEnd
+    println "#"
+
+    var numb c giv $c 1
+    println "#"
+
+    arg 1
+    Loop:
+        mul @ $base
+        LoopEnd:
+            add $c 1 giv $c @
+            smt $c $expo
+            eql $c $expo
+            orr @ @
+            ift @ Loop
+    
+    PowerEnd:
+        fre $base fre $expo fre $c
+    rtn @
 
 
 

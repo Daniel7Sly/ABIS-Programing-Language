@@ -150,15 +150,12 @@ pub(super) fn iff(program: &mut Program) {
 }
 
 pub(super) const ACTION_RND: &str = "rnd";
-pub(super) const ACTION_RND_ARGS: &[&str] = &[TYPE_VAR_NUMB];
+pub(super) const ACTION_RND_ARGS: &[&str] = &[];
+/// Pushes a random number to the stack.
 pub(super) fn rnd(program: &mut Program) {
     let parameters: Vec<String> = program.get_raw_parameters();
 
     assert!(parameters.len() == ACTION_RND_ARGS.len());
-
-    let param1 = program.get_variable_value_mutref(&parameters[0]);
-
-    assert!(param1.typee() == TYPE_NUMB);
 
     // https://en.wikipedia.org/wiki/Linear_congruential_generator
     let mut seed = SystemTime::now()
@@ -174,5 +171,5 @@ pub(super) fn rnd(program: &mut Program) {
 
     let rnd_number = seed >> 32;
 
-    *param1 = Value::Numb(rnd_number as f64);
+    program.value_stack.push(Value::Numb(rnd_number as f64));
 }
