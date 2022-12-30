@@ -42,7 +42,7 @@ pub(super) fn sub(program: &mut Program) {
     let numb2 = param2.get_numb_value();
 
     let rslt = numb1 - numb2;
-    current_proc.value_stack.push(Value::Numb(rslt));
+    program.value_stack.push(Value::Numb(rslt));
 
     program.value_stack.push(Value::Numb(rslt));
 }
@@ -65,7 +65,7 @@ pub(super) fn mul(program: &mut Program) {
     let numb2 = param2.get_numb_value();
 
     let rslt = numb1 * numb2;
-    current_proc.value_stack.push(Value::Numb(rslt));
+    program.value_stack.push(Value::Numb(rslt));
 
     program.value_stack.push(Value::Numb(rslt));
 }
@@ -88,7 +88,7 @@ pub(super) fn div(program: &mut Program) {
     let numb2 = param2.get_numb_value();
 
     let rslt = numb1 / numb2;
-    current_proc.value_stack.push(Value::Numb(rslt));
+    program.value_stack.push(Value::Numb(rslt));
 
     program.value_stack.push(Value::Numb(rslt));
 }

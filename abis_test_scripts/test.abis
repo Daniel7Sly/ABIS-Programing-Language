@@ -3,7 +3,7 @@
     arg     7
     
     exe     @Power
-    println @
+    test    @
 
     rtn _
 
@@ -20,13 +20,10 @@
 @Power:
     var numb base giv $base @
     var numb expo giv $expo @
-    println "#"
     smt $expo 1
     ift @ PowerEnd
-    println "#"
 
     var numb c giv $c 1
-    println "#"
 
     arg 1
     Loop:

@@ -1,4 +1,4 @@
-use std::{fs, fmt::Display};
+use std::{fmt::Display, fs};
 
 use abis::{AbisError, ActionDef, Interpreter, Program, TYPE_TEXT};
 
@@ -8,7 +8,7 @@ fn main() -> Result<(), AbisError> {
 
     interpreter.add_action(ACTION_PRINTLN, ActionDef::new(println, ACTION_PRINTLN_ARGS));
 
-    let script = fs::read_to_string("test.abis").expect("Unable to read file!");
+    let script = fs::read_to_string("experiment.abis").expect("Unable to read file!");
 
     interpreter
         .load_script(script)

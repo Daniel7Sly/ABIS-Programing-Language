@@ -20,7 +20,7 @@ const TYPE_VAR_ARRAY: &str = "VAR_ARRAY";
 const TYPE_TYPE: &str = "TYPE";
 const TYPE_FLAG: &str = "FLAG";
 const TYPE_PROC: &str = "PROC";
-const TYPE_NEUTRAL: &str = "NEUTRAL";
+pub const TYPE_NEUTRAL: &str = "NEUTRAL";
 
 const TYPE_VAR_TEXT: &str = "VAR_TEXT";
 const TYPE_VAR_NUMB: &str = "VAR_NUMB";
@@ -34,7 +34,7 @@ const DEF_BOOL_VALUE: bool = false;
 /// The symbol used in code to interact with the value stack
 const VALUE_STACK_SYMBOL: &str = "@";
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Value {
     Numb(f64),
     Bool(bool),
@@ -134,7 +134,7 @@ impl Value {
 
 impl Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self{
+        match self {
             Value::Numb(v) => write!(f, "{}", v),
             Value::Bool(v) => write!(f, "{}", v),
             Value::Text(v) => write!(f, "{}", v),
