@@ -1,0 +1,13 @@
+#Arithmetic actions test
+@main:
+    add 5 5
+    test @
+    sub 12 4
+    test @
+    mul 3 2
+    test @
+    div 10 2
+    test @
+    mod 10 8
+    test @
+    rtn _

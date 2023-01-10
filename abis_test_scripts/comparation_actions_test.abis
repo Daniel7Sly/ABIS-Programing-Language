@@ -1,0 +1,6 @@
+# comparation actions test
+@main:
+    bgt
+    smt
+    eql
+    dif

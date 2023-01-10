@@ -1,42 +1,43 @@
 use std::fs;
 
-use abis::{AbisError, ActionDef, Interpreter, Program, Value, TYPE_NEUTRAL};
+use abis::{AbisError, Interpreter, Value};
 
-#[test]
-fn main_test() -> Result<(), AbisError> {
-    test_script("test.abis")?;
-    Ok(())
-}
-
-fn test_script(test_file_name: &str) -> Result<(), AbisError> {
+fn test_script(test_file_name: &str) -> Result<Vec<Value>, AbisError> {
     let script = read_script(test_file_name);
-    run_script(script)?;
-    Ok(())
+    run_script(script)
 }
 
 fn read_script(test_file_name: &str) -> String {
-    let script = fs::read_to_string(format!("abis_test_scripts\\{}", test_file_name))
-        .expect("Unable to read file!");
+    let script = fs::read_to_string(format!("abis_test_scripts\\{}", test_file_name)).expect(
+        format!(
+            "Unable to read test script abis_test_scripts\\{}",
+            test_file_name
+        )
+        .as_str(),
+    );
     script
 }
-fn run_script(script: String) -> Result<(), AbisError> {
+fn run_script(script: String) -> Result<Vec<Value>, AbisError> {
     let mut interpreter = Interpreter::new();
-    interpreter.add_action(ACTION_TEST, ActionDef::new(test_action, ACTION_TEST_ARGS));
     interpreter
         .load_script(script)
         .expect("Error Loading Script!");
-    interpreter.run_scripts()?;
-    Ok(())
+    interpreter.run_scripts(true)
 }
 
 #[test]
 /// Tests if can run hello world
 /// If this test works it means the the lexer and the parser
-/// should be working proprely
+/// should be working proprely and the interpreter could execute actions.
 fn hello_world() {
-    assert!(test_script("test_hello_world.abis").is_ok());
-    assert_eq!(rtva(0), Value::Text("Hello World!".to_string()))
+    let test_results = test_script("test_hello_world.abis");
+    assert!(test_results.is_ok());
+
+    let test_results = test_results.unwrap();
+
+    assert_eq!(test_results[0], Value::Text("Hello World!".to_string()));
 }
+
 #[test]
 fn missing_main_flag() {
     assert_eq!(
@@ -45,22 +46,25 @@ fn missing_main_flag() {
     );
 }
 
-// This test action is used to test if adding new actions to the interpreter
-// is working proprely and used in abis code to push values to TEST_VALUES
-// then the values can be check in the main_test().
-static mut TEST_VALUES: Vec<Value> = Vec::new();
+#[test]
+fn arithmetic_actions_test() {
+    let test_results = test_script("arithmetic_actions_test.abis");
+    assert!(test_results.is_ok());
 
-const ACTION_TEST: &str = "test";
-const ACTION_TEST_ARGS: &[&str] = &[TYPE_NEUTRAL];
-fn test_action(current_proc: &mut Program) {
-    let parameters = current_proc.get_parameters_values();
+    let test_results = test_results.unwrap();
 
-    assert!(parameters.len() == ACTION_TEST_ARGS.len());
-
-    let value = parameters[0].get_pure_value();
-    unsafe { TEST_VALUES.push(value) };
+    assert_eq!(test_results[0], Value::Numb(10f64));
+    assert_eq!(test_results[1], Value::Numb(8f64));
+    assert_eq!(test_results[2], Value::Numb(6f64));
+    assert_eq!(test_results[3], Value::Numb(5f64));
+    assert_eq!(test_results[4], Value::Numb(2f64));
 }
-/// Stands for "Read Test_Values At"
-fn rtva(i: usize) -> Value {
-    unsafe { TEST_VALUES[i].clone() }
+
+fn comparation_actions_test() {
+    let test_results = test_script("comparation_actions_test.abis");
+    assert!(test_results.is_ok());
+
+    let test_results = test_results.unwrap();
+
+    assert_eq!(test_results[0], Value::Text("Hello World!".to_string()));
 }

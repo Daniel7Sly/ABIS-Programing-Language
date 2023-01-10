@@ -40,7 +40,7 @@ pub enum Value {
     Bool(bool),
     Text(String),
     Array(Type, Vec<Value>),
-    Struct(Type, HashMap<String, Value>),
+    Struct(Type, HashMap<Name, Value>),
 }
 impl Value {
     pub fn new(typee: &str) -> Self {
@@ -244,15 +244,15 @@ impl std::ops::DerefMut for StructMap {
 
 #[derive(Debug, Clone)]
 pub struct Program {
-    call_stack: Vec<usize>,
-    value_stack: Vec<Value>,
-
     flag_map: FlagMap,
     program_actions: Vec<Action>,
+    call_stack: Vec<usize>,
 
+    value_stack: Vec<Value>,
+    test_value_stack: Vec<Value>,
     var_map: VariableMap,
-    struct_map: StructMap,
 
+    //TODO: struct_map: StructMap,
     current_action_index: usize,
     next_action_index: usize,
 }
@@ -262,11 +262,12 @@ impl Program {
             program_actions: action_vec,
             flag_map,
             var_map: VariableMap::new(),
-            struct_map: StructMap::new(),
+            //TODO: struct_map: StructMap::new(),
             next_action_index: 0,
             current_action_index: 0,
             call_stack: Vec::new(),
             value_stack: Vec::new(),
+            test_value_stack: Vec::new(),
         }
     }
 
@@ -349,7 +350,8 @@ impl Program {
     pub fn run_program(
         &mut self,
         actions_def: &HashMap<String, ActionDef>,
-    ) -> Result<(), AbisError> {
+        test_mode: bool,
+    ) -> Result<Vec<Value>, AbisError> {
         //println!("{:#?}", self);
 
         if !self.flag_map.contains_key("@main") {
@@ -358,6 +360,8 @@ impl Program {
 
         self.current_action_index = self.flag_map["@main"];
         self.call_stack.push(self.current_action_index);
+
+        //TODO: If not in test_mode skip test actions
 
         // Main Loop
         while self.call_stack.len() > 0 {
@@ -375,7 +379,11 @@ impl Program {
 
         //print!("Emem");
 
-        Ok(())
+        if test_mode {
+            Ok(self.test_value_stack.clone())
+        } else {
+            Ok(self.value_stack.clone())
+        }
     }
 }
 
@@ -388,7 +396,6 @@ impl Interpreter {
         Self {
             action_def_map: std_actions::hashmap_with_default_actions(),
             program: None,
-            //string_literals_list: Vec::new(),
         }
     }
 
@@ -415,10 +422,9 @@ impl Interpreter {
     }
 
     /// Runs the current loaded script.
-    pub fn run_scripts(&mut self) -> Result<(), AbisError> {
+    pub fn run_scripts(&mut self, test_mode: bool) -> Result<Vec<Value>, AbisError> {
         if let Some(prog) = &mut self.program {
-            prog.run_program(&self.action_def_map)?;
-            Ok(())
+            prog.run_program(&self.action_def_map, test_mode)
         } else {
             Err(AbisError::NoLoadedScript)
         }

@@ -173,3 +173,14 @@ pub(super) fn rnd(program: &mut Program) {
 
     program.value_stack.push(Value::Numb(rnd_number as f64));
 }
+
+pub(super) const ACTION_TEST: &str = "test";
+pub(super) const ACTION_TEST_ARGS: &[&str] = &[TYPE_NEUTRAL];
+pub(super) fn test_action(current_proc: &mut Program) {
+    let parameters = current_proc.get_parameters_values();
+
+    assert!(parameters.len() == ACTION_TEST_ARGS.len());
+
+    let value = parameters[0].get_pure_value();
+    current_proc.test_value_stack.push(value);
+}

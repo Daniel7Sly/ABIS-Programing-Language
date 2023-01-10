@@ -25,6 +25,15 @@ use crate::ActionDef;
 pub(crate) fn hashmap_with_default_actions() -> HashMap<String, ActionDef> {
     let mut map = HashMap::<String, ActionDef>::new();
 
+    // Test
+    map.insert(
+        base_actions::ACTION_TEST.to_string(),
+        ActionDef {
+            method: base_actions::test_action,
+            parameters_types: base_actions::ACTION_TEST_ARGS,
+        },
+    );
+
     // VAR
     map.insert(
         base_actions::ACTION_VAR.to_string(),

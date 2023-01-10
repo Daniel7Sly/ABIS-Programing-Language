@@ -14,7 +14,7 @@ fn main() -> Result<(), AbisError> {
         .load_script(script)
         .expect("Error Loading Script!");
 
-    interpreter.run_scripts()?;
+    interpreter.run_scripts(false)?;
     Ok(())
 }
 
