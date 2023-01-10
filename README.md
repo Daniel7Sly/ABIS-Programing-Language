@@ -3,7 +3,7 @@ ABIS
 This project is an interpreter for a programming language i created myself.
 The first objective to this language was to create something like [Lua](https://en.wikipedia.org/wiki/Lua_(programming_language))
 but with a syntax more similar to assembly. Right now i dont know if this language will
-turn into an interpreted scripting language or an compiled one or both. (it feels like writing intermediate representation)
+turn into an interpreted scripting language, or a compiled one, or both. (it feels like writing intermediate representation)
 
 ### This is still in a very early development stage and a lot of things can change.
 
