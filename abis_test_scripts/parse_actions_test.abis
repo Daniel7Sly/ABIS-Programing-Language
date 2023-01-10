@@ -1,0 +1,21 @@
+# Parse actions test
+@main:
+    var numb num
+    var bool pr
+
+    prs $num "69" $pr
+    test $pr
+    test $num
+
+    prs $num "emem" $pr
+    test $pr
+    test $num
+
+    txt 34
+    test @
+    txt "emem"
+    test @
+    txt false
+    test @
+
+    rtn _

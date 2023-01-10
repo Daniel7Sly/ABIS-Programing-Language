@@ -13,7 +13,7 @@ pub(super) const ACTION_PRS_ARGS: &[&str] = &[TYPE_VAR_NUMB, TYPE_TEXT, TYPE_VAR
 pub(crate) fn prs(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
-    assert!(parameters.len() == 3);
+    assert!(parameters.len() == ACTION_PRS_ARGS.len());
 
     let param2 = current_proc.get_value(&parameters[1]);
     assert!(param2.typee() == TYPE_TEXT, "2º param is not of type TEXT");
@@ -27,39 +27,35 @@ pub(crate) fn prs(current_proc: &mut Program) {
         assert!(param1.typee() == TYPE_NUMB, "1º param is not of type NUMB");
         *param1 = Value::Numb(numb);
 
-        let param3 = current_proc.get_variable_value_mutref(&parameters[3]);
+        let param3 = current_proc.get_variable_value_mutref(&parameters[2]);
         assert!(param3.typee() == TYPE_BOOL, "3º param is not of type BOOL");
         *param3 = Value::Bool(true);
     } else {
-        let param3 = current_proc.get_variable_value_mutref(&parameters[3]);
+        let param3 = current_proc.get_variable_value_mutref(&parameters[2]);
         assert!(param3.typee() == TYPE_BOOL, "3º param is not of type BOOL");
         *param3 = Value::Bool(false);
     }
 }
 
 pub(super) const ACTION_TXT: &str = "txt";
-pub(super) const ACTION_TXT_ARGS: &[&str] = &[TYPE_VAR_TEXT, TYPE_NEUTRAL];
-/// Parses any given value into text.
-///
-/// TXT $text anything
+pub(super) const ACTION_TXT_ARGS: &[&str] = &[TYPE_NEUTRAL];
+/// Parses any given value into text pushing it to the stack.
+/// TXT anything
 pub(crate) fn txt(current_proc: &mut Program) {
     let parameters: Vec<String> = current_proc.get_raw_parameters();
 
-    assert!(parameters.len() == 2);
+    assert!(parameters.len() == ACTION_TXT_ARGS.len());
 
-    let param2 = current_proc.get_value(&parameters[1]);
-    let param1 = current_proc.get_variable_value_mutref(&parameters[0]);
-
-    assert!(param1.typee() == TYPE_TEXT);
+    let param2 = current_proc.get_value(&parameters[0]);
 
     let text: String;
     match param2 {
-        Value::Struct(_, _v) => text = stringify!(v).to_string(),
+        Value::Struct(_, _v) => todo!(),
         Value::Text(v) => text = v,
         Value::Numb(v) => text = v.to_string(),
         Value::Bool(v) => text = v.to_string(),
-        Value::Array(_, _v) => text = stringify!(v).to_string(),
+        Value::Array(_, _v) => todo!(),
     }
 
-    *param1 = Value::Text(text);
+    current_proc.value_stack.push(Value::Text(text));
 }

@@ -35,7 +35,7 @@ pub(super) fn smt(program: &mut Program) {
     assert!(parameters.len() == ACTION_SMT_ARGS.len());
 
     let param2 = program.get_value(&parameters[0]);
-    let param3 = program.get_value(&parameters[0]);
+    let param3 = program.get_value(&parameters[1]);
 
     assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
     assert!(param3.typee() == TYPE_NUMB && param3.is_numb());

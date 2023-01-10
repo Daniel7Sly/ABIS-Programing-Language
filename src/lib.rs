@@ -325,7 +325,7 @@ impl Program {
 
         let k = param.trim_matches('$');
 
-        assert!(self.var_map.contains_key(k));
+        assert!(self.var_map.contains_key(k), "Variable not found: ${}", k);
 
         let val_ref = self.var_map.get_mut(k).unwrap();
 

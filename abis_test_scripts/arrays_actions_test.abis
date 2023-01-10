@@ -1,0 +1,24 @@
+# Array actions test
+@main:
+    var #numb array
+    
+    arl $array
+    test @
+
+    arp $array 1
+    arp $array 2
+    arp $array 3
+    
+    arl $array
+    test @
+
+    ari $array 0
+    test @
+    ari $array 1
+    test @
+    ari $array 2
+    test @
+    ari $array 3
+    test @
+
+    rtn _

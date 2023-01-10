@@ -60,11 +60,52 @@ fn arithmetic_actions_test() {
     assert_eq!(test_results[4], Value::Numb(2f64));
 }
 
+#[test]
 fn comparation_actions_test() {
     let test_results = test_script("comparation_actions_test.abis");
     assert!(test_results.is_ok());
 
     let test_results = test_results.unwrap();
 
-    assert_eq!(test_results[0], Value::Text("Hello World!".to_string()));
+    assert_eq!(test_results[0], Value::Bool(true));
+    assert_eq!(test_results[1], Value::Bool(true));
+    assert_eq!(test_results[2], Value::Bool(true));
+    assert_eq!(test_results[3], Value::Bool(true));
+    assert_eq!(test_results[4], Value::Bool(true));
+    assert_eq!(test_results[5], Value::Bool(false));
+    assert_eq!(test_results[6], Value::Bool(true));
+    assert_eq!(test_results[7], Value::Bool(false));
+    assert_eq!(test_results[8], Value::Bool(true));
+    assert_eq!(test_results[9], Value::Bool(false));
+}
+
+#[test]
+fn parse_actions_test() {
+    let test_results = test_script("parse_actions_test.abis");
+    assert!(test_results.is_ok());
+
+    let test_results = test_results.unwrap();
+
+    assert_eq!(test_results[0], Value::Bool(true));
+    assert_eq!(test_results[1], Value::Numb(69f64));
+    assert_eq!(test_results[2], Value::Bool(false));
+    assert_eq!(test_results[3], Value::Numb(69f64));
+    assert_eq!(test_results[4], Value::Text("34".to_string()));
+    assert_eq!(test_results[5], Value::Text("emem".to_string()));
+    assert_eq!(test_results[6], Value::Text("false".to_string()));
+}
+
+#[test]
+fn arrays_actions_test() {
+    let test_results = test_script("arrays_actions_test.abis");
+    assert!(test_results.is_ok());
+
+    let test_results = test_results.unwrap();
+
+    assert_eq!(test_results[0], Value::Numb(0f64));
+    assert_eq!(test_results[1], Value::Numb(3f64));
+    assert_eq!(test_results[2], Value::Numb(1f64));
+    assert_eq!(test_results[3], Value::Numb(2f64));
+    assert_eq!(test_results[4], Value::Numb(3f64));
+    assert_eq!(test_results[5], Value::Numb(1f64));
 }
