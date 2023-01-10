@@ -1,6 +1,23 @@
 # comparation actions test
 @main:
-    bgt
-    smt
-    eql
-    dif
+    bgt 3 2
+    test @
+    smt 5 10
+    test @
+    
+    eql 10 10
+    test @
+    dif 5 8
+    test @
+    
+    eql "a" "a"
+    test @
+    dif "a" "a"
+    test @
+
+    and true true
+    test @
+    and false true
+    test @
+    orr false true
+    test @

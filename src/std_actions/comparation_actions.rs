@@ -1,4 +1,4 @@
-use crate::{Program, Value, TYPE_BOOL, TYPE_NUMB};
+use crate::{Program, Value, TYPE_BOOL, TYPE_NEUTRAL, TYPE_NUMB};
 
 //Comparation and logic
 
@@ -49,7 +49,7 @@ pub(super) fn smt(program: &mut Program) {
 }
 
 pub(super) const ACTION_EQL: &str = "eql";
-pub(super) const ACTION_EQL_ARGS: &[&str] = &[TYPE_NUMB, TYPE_NUMB];
+pub(super) const ACTION_EQL_ARGS: &[&str] = &[TYPE_NEUTRAL, TYPE_NEUTRAL];
 /// Pushes true to value stack if the first number is equal to the second.
 /// Otherwise pushes false.
 pub(super) fn eql(program: &mut Program) {
@@ -57,22 +57,18 @@ pub(super) fn eql(program: &mut Program) {
 
     assert!(parameters.len() == ACTION_EQL_ARGS.len());
 
-    let param2 = program.get_value(&parameters[0]);
-    let param3 = program.get_value(&parameters[1]);
+    let param1 = program.get_value(&parameters[0]);
+    let param2 = program.get_value(&parameters[1]);
 
-    assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
-    assert!(param3.typee() == TYPE_NUMB && param3.is_numb());
+    assert!(param1.typee() == param2.typee());
 
-    let numb1 = param2.get_numb_value();
-    let numb2 = param3.get_numb_value();
-
-    let rslt = numb1 == numb2;
+    let rslt = param1 == param2;
 
     program.value_stack.push(Value::Bool(rslt));
 }
 
 pub(super) const ACTION_DIF: &str = "dif";
-pub(super) const ACTION_DIF_ARGS: &[&str] = &[TYPE_NUMB, TYPE_NUMB];
+pub(super) const ACTION_DIF_ARGS: &[&str] = &[TYPE_NEUTRAL, TYPE_NEUTRAL];
 /// Pushes true to value stack if the first number is different than the second.
 /// Otherwise pushes false.
 pub(super) fn dif(program: &mut Program) {
@@ -80,16 +76,12 @@ pub(super) fn dif(program: &mut Program) {
 
     assert!(parameters.len() == ACTION_DIF_ARGS.len());
 
-    let param2 = program.get_value(&parameters[0]);
-    let param3 = program.get_value(&parameters[1]);
+    let param1 = program.get_value(&parameters[0]);
+    let param2 = program.get_value(&parameters[1]);
 
-    assert!(param2.typee() == TYPE_NUMB && param2.is_numb());
-    assert!(param3.typee() == TYPE_NUMB && param3.is_numb());
+    assert!(param1.typee() == param2.typee());
 
-    let numb1 = param2.get_numb_value();
-    let numb2 = param3.get_numb_value();
-
-    let rslt = numb1 != numb2;
+    let rslt = param1 != param2;
 
     program.value_stack.push(Value::Bool(rslt));
 }
